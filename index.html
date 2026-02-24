@@ -61,7 +61,7 @@
         return 'data/' + (getParameterByName('src') ? getParameterByName('src') + '.json' : 'data.json');
     }
 
-    fetch(getFetchURL(), {mode: 'no-cors'})
+    fetch(getFetchURL())
         .then(function (res) {
             return res.json();
         })
