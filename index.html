@@ -32,6 +32,301 @@
             /*left:-24px;*/
             background-color: rgba(255,255,255,0);
         }
+
+        #add-node-panel {
+            display: none;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 100;
+            font-family: 'Open Sans Condensed', sans-serif;
+            border: 1px solid #eee;
+            width: 250px;
+        }
+
+        #add-node-panel h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .selected-nodes-container {
+            min-height: 30px;
+            padding: 8px;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+            background: #fafafa;
+            font-size: 13px;
+            color: #777;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .node-badge {
+            color: #333;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .node-badge.target-badge {
+            background: #e3f2fd;
+            border: 1px solid #4a91f2;
+        }
+
+        .node-badge.source-badge {
+            background: #ffebee;
+            border: 1px solid #ff8b94;
+        }
+
+        .node-badge span {
+            margin-left: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #888;
+        }
+
+        .node-badge span:hover {
+            color: #d32f2f;
+        }
+
+        #add-node-btn {
+            width: 100%;
+            padding: 8px;
+            background-color: #4f5b66;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        #add-node-btn:hover {
+            background-color: #343d46;
+        }
+
+        #mode-toggle-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            font-family: 'Open Sans Condensed', sans-serif;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            border: 1px solid #eee;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #4f5b66;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .slider.round {
+            border-radius: 20px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        #mode-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #add-node-panel {
+            display: none;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 100;
+            font-family: 'Open Sans Condensed', sans-serif;
+            border: 1px solid #eee;
+            width: 250px;
+        }
+
+        .click-mode-selector {
+            margin-bottom: 15px;
+        }
+
+        .click-mode-selector strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .segment-control {
+            display: flex;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .segment-btn {
+            flex: 1;
+            padding: 8px 0;
+            background: #f8f8f8;
+            border: none;
+            border-right: 1px solid #ccc;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+            transition: all 0.2s;
+        }
+
+        .segment-btn:last-child {
+            border-right: none;
+        }
+
+        .segment-btn.active {
+            background: #4f5b66;
+            color: white;
+        }
+
+        .segment-btn.target-btn.active {
+            background: #4a91f2;
+            color: white;
+        }
+
+        .segment-btn.source-btn.active {
+            background: #ff8b94;
+            color: white;
+        }
+
+        #search-container {
+            position: absolute;
+            top: 70px;
+            left: 20px;
+            z-index: 100;
+            width: 250px;
+            font-family: 'Open Sans Condensed', sans-serif;
+        }
+
+        #node-search {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #node-search:focus {
+            border-color: #4f5b66;
+        }
+
+        #search-results {
+            display: none;
+            position: absolute;
+            top: 45px;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            box-sizing: border-box;
+        }
+
+        .search-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .search-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-item:hover {
+            background-color: #f4f4f8;
+            color: #4a91f2;
+            font-weight: bold;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300" rel="stylesheet">
     <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise,fetch"></script>
@@ -45,6 +340,49 @@
 </head>
 <body>
 <!--<textarea id="msg" style="width:100%; height:200px;"></textarea>-->
+<div id="mode-toggle-container">
+    <label class="switch">
+        <input type="checkbox" id="mode-toggle">
+        <span class="slider round"></span>
+    </label>
+    <span id="mode-label">뷰어 모드</span>
+</div>
+<div id="search-container">
+    <input type="text" id="node-search" placeholder="노드 검색 (이름 또는 ID)..." autocomplete="off">
+    <div id="search-results"></div>
+</div>
+<div id="add-node-panel">
+    <h3>새 노드 추가</h3>
+    <div class="click-mode-selector">
+        <strong>그래프에서 클릭하여 선택:</strong>
+        <div class="segment-control" id="click-mode-group">
+            <button type="button" class="segment-btn active" data-value="none">일반</button>
+            <button type="button" class="segment-btn target-btn" data-value="target">선행(파랑)</button>
+            <button type="button" class="segment-btn source-btn" data-value="source">후행(빨강)</button>
+        </div>
+    </div>
+    <div class="input-group">
+        <label for="node-id">ID (필수)</label>
+        <input type="text" id="node-id" placeholder="예: NEW_NODE" required>
+    </div>
+    <div class="input-group">
+        <label for="node-label">이름 (Label)</label>
+        <input type="text" id="node-label" placeholder="예: 새로운 과목">
+    </div>
+    <div class="input-group">
+        <label for="node-url">URL (선택)</label>
+        <input type="text" id="node-url" placeholder="https://...">
+    </div>
+    <div class="input-group">
+        <label>선행 노드 (이 노드를 위해 먼저 배워야 할 것)</label>
+        <div id="selected-targets" class="selected-nodes-container">선택된 노드가 없습니다.</div>
+    </div>
+    <div class="input-group">
+        <label>후행 노드 (이 노드를 배운 후 배울 수 있는 것)</label>
+        <div id="selected-sources" class="selected-nodes-container">선택된 노드가 없습니다.</div>
+    </div>
+    <button id="add-node-btn">노드 추가하기</button>
+</div>
 <div id="cy"></div>
 <script>
     function getParameterByName(name, url) {
@@ -160,6 +498,8 @@
                 elements: data,
                 minZoom:0.2,
                 wheelSensitivity:0.1,
+                autounselectify: true, // 기본 선택(파란색 오버레이) 비활성화
+                boxSelectionEnabled: false, // 박스 선택 비활성화
                 style: [ // the stylesheet for the graph
                     {
                         selector: 'node',
@@ -173,13 +513,34 @@
                             'text-outline-color': textOutlineColor,
                             'background-color': nodeBGColor,
                             'width':function(ele){
-                                return nodeMaxSize*pageRank.rank('#'+ele.id())+nodeMinSize;
+                                var rank = 0;
+                                try {
+                                    var r = pageRank.rank('#'+ele.id());
+                                    if (r !== undefined && r !== null) {
+                                        rank = typeof r === 'number' ? r : (r[0] || 0);
+                                    }
+                                } catch(e) {}
+                                return nodeMaxSize*rank+nodeMinSize;
                             },
                             'height':function(ele){
-                                return nodeMaxSize*pageRank.rank('#'+ele.id())+nodeMinSize;
+                                var rank = 0;
+                                try {
+                                    var r = pageRank.rank('#'+ele.id());
+                                    if (r !== undefined && r !== null) {
+                                        rank = typeof r === 'number' ? r : (r[0] || 0);
+                                    }
+                                } catch(e) {}
+                                return nodeMaxSize*rank+nodeMinSize;
                             },
                             'font-size':function(ele){
-                                return fontMaxSize*pageRank.rank('#'+ele.id())+fontMinSize;
+                                var rank = 0;
+                                try {
+                                    var r = pageRank.rank('#'+ele.id());
+                                    if (r !== undefined && r !== null) {
+                                        rank = typeof r === 'number' ? r : (r[0] || 0);
+                                    }
+                                } catch(e) {}
+                                return fontMaxSize*rank+fontMinSize;
                             }
                         }
                     },
@@ -197,6 +558,20 @@
                         selector: '.prepare',
                         style: {
                             'opacity': '0.5'
+                        }
+                    },
+                    {
+                        selector: '.selected-target',
+                        style: {
+                            'border-width': 4,
+                            'border-color': '#4a91f2'
+                        }
+                    },
+                    {
+                        selector: '.selected-source',
+                        style: {
+                            'border-width': 4,
+                            'border-color': '#ff8b94'
                         }
                     }
                 ],
@@ -243,7 +618,16 @@
             function setResetFocus(target_cy){
                 target_cy.nodes().forEach(function(target){
                     target.style('background-color', nodeBGColor);
-                    var rank = pageRank.rank(target);
+                    var rank = 0;
+                    try {
+                        var rankObj = pageRank.rank('#' + target.id());
+                        // rankObj가 객체이고 값이 있을 경우, 혹은 숫자일 경우 처리
+                        if (rankObj !== undefined && rankObj !== null) {
+                            rank = typeof rankObj === 'number' ? rankObj : (rankObj[0] || 0);
+                        }
+                    } catch(e) {
+                        // 새로 추가된 노드 등에서 에러 발생 시 기본값 0 유지
+                    }
                     target.style('width', nodeMaxSize*rank+nodeMinSize);
                     target.style('height', nodeMaxSize*rank+nodeMinSize);
                     target.style('font-size', fontMaxSize*rank+fontMinSize);
@@ -270,11 +654,80 @@
                 setResetFocus(cy);
             }
 
+            var isEditMode = true;
+            var currentClickMode = 'target';
 
-            cy.on('tap', function (e) {
-                // 바탕화면을 탭했을 때 하이라이트를 제거
-                if(e.cy === e.target){
-                    setResetFocus(e.cy);
+            // 모드 선택 버튼 로직
+            document.querySelectorAll('.segment-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.segment-btn').forEach(function(b) { b.classList.remove('active'); });
+                    this.classList.add('active');
+                    currentClickMode = this.getAttribute('data-value');
+                });
+            });
+
+            // 초기 상태 설정
+            document.getElementById('add-node-panel').style.display = 'block';
+            document.getElementById('mode-label').innerText = '수정 모드';
+            document.getElementById('mode-toggle').checked = true;
+
+            var selectedTargets = new Set();
+            var selectedSources = new Set();
+            
+            // 수정 모드 진입 시 드래그 및 호버 효과 제어
+            document.getElementById('mode-toggle').addEventListener('change', function(e) {
+                isEditMode = e.target.checked;
+                var panel = document.getElementById('add-node-panel');
+                var label = document.getElementById('mode-label');
+                
+                if (isEditMode) {
+                    panel.style.display = 'block';
+                    label.innerText = '수정 모드';
+                    setResetFocus(cy); // 수정 모드 진입 시 기존 호버 상태 초기화
+                    
+                    // 수정 모드: 드래그 방지, 박스 선택 방지
+                    cy.autoungrabify(true); 
+                    cy.boxSelectionEnabled(false);
+                    
+                    updateGraphSelectionStyles(); 
+                } else {
+                    panel.style.display = 'none';
+                    label.innerText = '뷰어 모드';
+                    
+                    // 뷰어 모드로 전환 시 선택 초기화
+                    selectedTargets.clear();
+                    selectedSources.clear();
+                    renderSelectedNodes();
+                    updateGraphSelectionStyles();
+                    
+                    // 뷰어 모드: 드래그 허용
+                    cy.autoungrabify(false); 
+                    cy.boxSelectionEnabled(true);
+                }
+            });
+
+            function updateGraphSelectionStyles() {
+                cy.nodes().removeClass('selected-target selected-source');
+                
+                // 선택된 노드가 있으면 강조 스타일을 덮어씌우지 않도록 주의
+                selectedTargets.forEach(function(id) { cy.getElementById(id).addClass('selected-target'); });
+                selectedSources.forEach(function(id) { cy.getElementById(id).addClass('selected-source'); });
+            }
+
+            cy.on('tap', 'node', function (e) {
+                if (isEditMode) {
+                    var nodeId = e.target.id();
+                    if (currentClickMode === 'target') {
+                        if (selectedTargets.has(nodeId)) selectedTargets.delete(nodeId);
+                        else selectedTargets.add(nodeId);
+                        renderSelectedNodes();
+                        updateGraphSelectionStyles();
+                    } else if (currentClickMode === 'source') {
+                        if (selectedSources.has(nodeId)) selectedSources.delete(nodeId);
+                        else selectedSources.add(nodeId);
+                        renderSelectedNodes();
+                        updateGraphSelectionStyles();
+                    }
                 } else {
                     var url = e.target.data('url');
                     gtag('event', 'Click', {
@@ -285,15 +738,25 @@
                     if(url && url !== '')
                         window.open(url);
                 }
+            });
 
+            cy.on('tap', function (e) {
+                // 바탕화면을 탭했을 때 하이라이트를 제거
+                if(e.cy === e.target){
+                    if (!isEditMode) {
+                        setResetFocus(e.cy);
+                    }
+                }
             });
 
             cy.on('tapend mouseout', 'node', function(e){
+                if (isEditMode) return; // 수정 모드에서는 호버 애니메이션 무시
                 // document.querySelector('#msg').value += (e.type)+"\n";
                 setResetFocus(e.cy);
             });
 
             cy.on('tapstart mouseover', 'node', function(e){
+                if (isEditMode) return; // 수정 모드에서는 호버 애니메이션 무시
                 setResetFocus(e.cy);
                 setStyle(cy, {
                     'background-color':dimColor,
@@ -307,9 +770,241 @@
             // web font가 로딩이 끝나면 강제로 redraw 합니다.
             waitForWebfonts(['Open Sans Condensed'], function(){
                 cy.forceRender();
+                renderSelectedNodes();
             })
 
+            function renderSelectedNodes() {
+                var targetContainer = document.getElementById('selected-targets');
+                var sourceContainer = document.getElementById('selected-sources');
+                
+                targetContainer.innerHTML = '';
+                sourceContainer.innerHTML = '';
 
+                if (selectedTargets.size === 0) {
+                    targetContainer.innerText = '선택된 노드가 없습니다.';
+                } else {
+                    selectedTargets.forEach(function(id) {
+                        var node = cy.getElementById(id);
+                        var label = node.length > 0 ? (node.data('label') || id) : id;
+                        var badge = document.createElement('div');
+                        badge.className = 'node-badge target-badge';
+                        badge.innerText = label;
+                        var removeBtn = document.createElement('span');
+                        removeBtn.innerText = '×';
+                        removeBtn.onclick = function() {
+                            selectedTargets.delete(id);
+                            renderSelectedNodes();
+                            updateGraphSelectionStyles();
+                        };
+                        badge.appendChild(removeBtn);
+                        targetContainer.appendChild(badge);
+                    });
+                }
+
+                if (selectedSources.size === 0) {
+                    sourceContainer.innerText = '선택된 노드가 없습니다.';
+                } else {
+                    selectedSources.forEach(function(id) {
+                        var node = cy.getElementById(id);
+                        var label = node.length > 0 ? (node.data('label') || id) : id;
+                        var badge = document.createElement('div');
+                        badge.className = 'node-badge source-badge';
+                        badge.innerText = label;
+                        var removeBtn = document.createElement('span');
+                        removeBtn.innerText = '×';
+                        removeBtn.onclick = function() {
+                            selectedSources.delete(id);
+                            renderSelectedNodes();
+                            updateGraphSelectionStyles();
+                        };
+                        badge.appendChild(removeBtn);
+                        sourceContainer.appendChild(badge);
+                    });
+                }
+            }
+
+            // 새 노드 추가 로직
+            document.getElementById('add-node-btn').addEventListener('click', function() {
+                var idInput = document.getElementById('node-id').value.trim();
+                var labelInput = document.getElementById('node-label').value.trim();
+                var urlInput = document.getElementById('node-url').value.trim();
+                
+                var targets = Array.from(selectedTargets);
+                var sources = Array.from(selectedSources);
+
+                if (!idInput) {
+                    alert('노드 ID를 입력해주세요.');
+                    return;
+                }
+
+                // 중복 ID 확인
+                if (cy.getElementById(idInput).length > 0) {
+                    alert('이미 존재하는 ID입니다. 다른 ID를 사용해주세요.');
+                    return;
+                }
+
+                var elementsToAdd = [];
+
+                var newNode = {
+                    group: 'nodes',
+                    data: {
+                        id: idInput,
+                        label: labelInput || idInput, // 라벨이 없으면 ID를 라벨로 사용
+                        url: urlInput
+                    }
+                };
+                elementsToAdd.push(newNode);
+
+                // 선행 노드 연결 (target)
+                // 이 노드를 배우려면 target을 먼저 배워야 함 (이 노드가 source가 됨)
+                targets.forEach(function(targetId) {
+                    elementsToAdd.push({
+                        group: 'edges',
+                        data: {
+                            id: targetId + '-' + idInput, // ID 규칙: source-target
+                            source: targetId,
+                            target: idInput
+                        }
+                    });
+                });
+
+                // 후행 노드 연결 (source)
+                // 이 노드를 배운 후 source를 배울 수 있음 (이 노드가 target이 됨)
+                sources.forEach(function(sourceId) {
+                    elementsToAdd.push({
+                        group: 'edges',
+                        data: {
+                            id: idInput + '-' + sourceId, // ID 규칙: source-target
+                            source: idInput,
+                            target: sourceId
+                        }
+                    });
+                });
+
+                // 서버로 데이터 전송 및 저장
+                var srcParam = getParameterByName('src');
+                var payload = {
+                    src: srcParam || 'data',
+                    elements: elementsToAdd
+                };
+
+                fetch('/api/add-elements', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(function(response) {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(function(data) {
+                    console.log('Server response:', data);
+                    
+                    // 그래프에 노드와 엣지 추가 (서버 저장 성공 시에만 화면에 반영)
+                    cy.add(elementsToAdd);
+                    
+                    // PageRank 계산용 인스턴스에도 추가 (객체 참조 충돌 방지를 위해 깊은 복사)
+                    _rank_cy.add(JSON.parse(JSON.stringify(elementsToAdd))); 
+
+                    // PageRank 다시 계산
+                    pageRank = _rank_cy.elements().pageRank();
+
+                    // 새로 추가된 요소들에 기본 스타일 적용을 위해 리셋 포커스 호출
+                    setResetFocus(cy);
+
+                    // 레이아웃 다시 실행하여 노드 배치
+                    var layout = cy.layout({
+                        name: 'cose-bilkent',
+                        animate: true,
+                        animationDuration: 500,
+                        gravityRangeCompound: 1.5,
+                        fit: true,
+                        tile: true
+                    });
+                    layout.run();
+
+                    // 입력 폼 초기화
+                    document.getElementById('node-id').value = '';
+                    document.getElementById('node-label').value = '';
+                    document.getElementById('node-url').value = '';
+                    
+                    // 선택 초기화
+                    selectedTargets.clear();
+                    selectedSources.clear();
+                    renderSelectedNodes();
+                    updateGraphSelectionStyles();
+                    
+                    alert('노드가 성공적으로 추가되고 파일에 저장되었습니다!');
+                })
+                .catch(function(error) {
+                    console.error('Error saving elements:', error);
+                    alert('서버 저장 중 오류가 발생했습니다. 개발자 도구 콘솔을 확인해주세요.');
+                });
+            });
+
+            // 노드 검색 기능 로직
+            var searchInput = document.getElementById('node-search');
+            var searchResults = document.getElementById('search-results');
+
+            searchInput.addEventListener('input', function() {
+                var query = this.value.trim().toLowerCase();
+                searchResults.innerHTML = '';
+                
+                if (!query) {
+                    searchResults.style.display = 'none';
+                    return;
+                }
+
+                // 이름(label) 또는 ID에 검색어가 포함된 노드 필터링
+                var matchedNodes = cy.nodes().filter(function(node) {
+                    var label = (node.data('label') || '').toLowerCase();
+                    var id = node.id().toLowerCase();
+                    return label.includes(query) || id.includes(query);
+                });
+
+                if (matchedNodes.length > 0) {
+                    searchResults.style.display = 'block';
+                    matchedNodes.forEach(function(node) {
+                        var div = document.createElement('div');
+                        div.className = 'search-item';
+                        div.innerText = (node.data('label') || node.id()) + ' (' + node.id() + ')';
+                        
+                        div.addEventListener('click', function() {
+                            // 검색창 초기화 및 결과 숨김
+                            searchInput.value = '';
+                            searchResults.style.display = 'none';
+                            
+                            // 기존 포커스 초기화 후 선택한 노드 포커스
+                            setResetFocus(cy);
+                            setStyle(cy, {
+                                'background-color': dimColor,
+                                'line-color': dimColor,
+                                'target-arrow-color': dimColor,
+                                'color': dimColor
+                            });
+                            setFocus(node, successorColor, predecessorsColor, edgeActiveWidth, arrowActiveScale);
+                            
+                            // 선택한 노드로 뷰 이동 (애니메이션)
+                            cy.animate({
+                                center: { eles: node }
+                            }, { duration: 500 });
+                        });
+                        
+                        searchResults.appendChild(div);
+                    });
+                } else {
+                    searchResults.style.display = 'none';
+                }
+            });
+
+            // 검색창 외부 클릭 시 결과 창 숨기기
+            document.addEventListener('click', function(e) {
+                if (!document.getElementById('search-container').contains(e.target)) {
+                    searchResults.style.display = 'none';
+                }
+            });
 
         });
 

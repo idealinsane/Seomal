@@ -1005,7 +1005,7 @@
       "id": "JAVA1",
       "url": "https://opentutorials.org/module/4294",
       "label": "JAVA1"
-    } 
+    }
   },
   {
     "data": {
@@ -1019,7 +1019,7 @@
       "id": "JAVA-FLOW-CONTROL",
       "url": "https://opentutorials.org/module/4378",
       "label": "JAVA 제어문"
-    } 
+    }
   },
   {
     "data": {
@@ -1033,7 +1033,7 @@
       "id": "JAVA-METHOD",
       "url": "https://opentutorials.org/module/4397",
       "label": "JAVA method"
-    } 
+    }
   },
   {
     "data": {
@@ -1047,21 +1047,21 @@
       "id": "JAVA-OOP",
       "url": "https://opentutorials.org/module/4406",
       "label": "JAVA Object Oriented Programming"
-    } 
+    }
   },
   {
     "data": {
       "id": "CYBER-CHEF",
       "url": "https://www.youtube.com/watch?v=jNezME84zMI",
       "label": "CyberChef"
-    } 
+    }
   },
   {
     "data": {
       "id": "REACT-REDUX",
       "url": "https://opentutorials.org/module/4518",
       "label": "REACT REDUX"
-    } 
+    }
   },
   {
     "data": {
@@ -1082,7 +1082,7 @@
       "id": "REACT-REDUX-WORKSHOP",
       "url": "https://www.youtube.com/watch?v=Cwwsv_OaWhM",
       "label": "REACT REDUX Workshop"
-    } 
+    }
   },
   {
     "data": {
@@ -1096,7 +1096,7 @@
       "id": "GIT-BISECT",
       "url": "https://www.youtube.com/watch?v=-UERw--siBw",
       "label": "GIT bisect"
-    } 
+    }
   },
   {
     "data": {
@@ -1110,7 +1110,7 @@
       "id": "REACT-AJAX",
       "url": "https://opentutorials.org/module/4549",
       "label": "React & Ajax"
-    } 
+    }
   },
   {
     "data": {
@@ -1125,14 +1125,13 @@
       "source": "REACT-AJAX",
       "target": "REACT"
     }
-  }
-  ,
+  },
   {
     "data": {
       "id": "WEBPACK",
       "url": "https://opentutorials.org/module/4566",
       "label": "Webpack"
-    } 
+    }
   },
   {
     "data": {
@@ -1153,7 +1152,7 @@
       "id": "NPM-PACKAGE",
       "url": "https://opentutorials.org/module/4571",
       "label": "NPM Package"
-    } 
+    }
   },
   {
     "data": {
@@ -1167,7 +1166,7 @@
       "id": "NPM-IN-THE-SHELL--NODE",
       "url": "https://www.youtube.com/watch?v=2m4iTjdgbMU",
       "label": "NPM in the console"
-    } 
+    }
   },
   {
     "data": {
@@ -1181,7 +1180,7 @@
       "id": "NPM-IN-THE-SHELL--JS",
       "url": "https://www.youtube.com/watch?v=2m4iTjdgbMU",
       "label": "NPM in the console"
-    } 
+    }
   },
   {
     "data": {
@@ -1195,7 +1194,7 @@
       "id": "REACT-CLASS-VS-FUNCTIONAL-STYLE",
       "url": "https://opentutorials.org/module/4600",
       "label": "React class vs functional style"
-    } 
+    }
   },
   {
     "data": {
@@ -1209,7 +1208,7 @@
       "id": "REACT-ROUTER-DOM",
       "url": "https://youtu.be/WLdbsl9UwDc",
       "label": "React Router"
-    } 
+    }
   },
   {
     "data": {
@@ -1223,7 +1222,7 @@
       "id": "CREATE-REACT-APP--PROXY",
       "url": "https://www.youtube.com/watch?v=VaAWIAxvj0A&t=155s",
       "label": "CreateReactApp Proxy"
-    } 
+    }
   },
   {
     "data": {
@@ -1237,7 +1236,7 @@
       "id": "GITHUB",
       "url": "https://opentutorials.org/module/4636",
       "label": "github.com"
-    } 
+    }
   },
   {
     "data": {
@@ -1308,8 +1307,7 @@
       "source": "JAVA-INTERFACE",
       "target": "JAVA-OOP"
     }
-  }
-,
+  },
   {
     "data": {
       "id": "JAVA-EXCEPTION",
@@ -1490,6 +1488,102 @@
       "id": "AWS1--AWS-EC2",
       "source": "AWS-EC2",
       "target": "AWS1"
+    }
+  },
+  {
+    "group": "nodes",
+    "data": {
+      "id": "TEST_API_NODE",
+      "label": "TEST_API_NODE",
+      "url": ""
+    }
+  },
+  {
+    "group": "nodes",
+    "data": {
+      "id": "TEST_API_NODE_2",
+      "label": "TEST_API_NODE_2",
+      "url": ""
+    }
+  },
+  {
+    "group": "nodes",
+    "data": {
+      "id": "TEST_API_NODE_3",
+      "label": "TEST_API_NODE_3",
+      "url": ""
+    }
+  },
+  {
+    "group": "nodes",
+    "data": {
+      "id": "TEST_API_NODE_4",
+      "label": "TEST_API_NODE_4",
+      "url": ""
+    }
+  },
+  {
+    "group": "nodes",
+    "data": {
+      "id": "TEST_API_NODE_5",
+      "label": "TEST_API_NODE_5",
+      "url": ""
+    }
+  },
+  {
+    "group": "nodes",
+    "data": {
+      "id": "tset",
+      "label": "test",
+      "url": ""
+    }
+  },
+  {
+    "group": "edges",
+    "data": {
+      "id": "WEB1-tset",
+      "source": "WEB1",
+      "target": "tset"
+    }
+  },
+  {
+    "group": "edges",
+    "data": {
+      "id": "tset-WEB3-FACEBOOK-LOGIN",
+      "source": "tset",
+      "target": "WEB3-FACEBOOK-LOGIN"
+    }
+  },
+  {
+    "group": "nodes",
+    "data": {
+      "id": "edgecase",
+      "label": "edgecase",
+      "url": ""
+    }
+  },
+  {
+    "group": "edges",
+    "data": {
+      "id": "ORACLE-edgecase",
+      "source": "ORACLE",
+      "target": "edgecase"
+    }
+  },
+  {
+    "group": "edges",
+    "data": {
+      "id": "RDB-MODELING-ORACLE-edgecase",
+      "source": "RDB-MODELING-ORACLE",
+      "target": "edgecase"
+    }
+  },
+  {
+    "group": "edges",
+    "data": {
+      "id": "edgecase-DATABASE1",
+      "source": "edgecase",
+      "target": "DATABASE1"
     }
   }
 ]
