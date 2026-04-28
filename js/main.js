@@ -13,190 +13,203 @@
     }
 
     // Alpine.js State Store
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('appState', () => ({
-            isEditMode: false,
-            clickMode: 'none',
-            searchQuery: '',
-            searchResults: [],
-            newNode: {
-                id: '',
-                label: '',
-                url: ''
-            },
-            selectedTargets: [], // Array of {id, label}
-            selectedSources: [], // Array of {id, label}
-
-            toggleEditMode() {
-                if (this.isEditMode) {
-                    setResetFocus(cy);
-                    cy.autoungrabify(true);
-                    cy.boxSelectionEnabled(false);
-                    this.updateGraphSelectionStyles();
-                } else {
-                    this.selectedTargets = [];
-                    this.selectedSources = [];
-                    this.updateGraphSelectionStyles();
-                    cy.autoungrabify(false);
-                    cy.boxSelectionEnabled(true);
-                }
-            },
-
-            handleSearch() {
-                const query = this.searchQuery.trim().toLowerCase();
-                if (!query) {
-                    this.searchResults = [];
-                    return;
-                }
-
-                this.searchResults = cy.nodes().filter(function(node) {
-                    var label = (node.data('label') || '').toLowerCase();
-                    var id = node.id().toLowerCase();
-                    return label.includes(query) || id.includes(query);
-                }).map(node => ({
-                    id: node.id(),
-                    label: node.data('label') || node.id(),
-                    cyNode: node
-                }));
-            },
-
-            selectSearchResult(nodeData) {
-                this.searchQuery = '';
-                this.searchResults = [];
+    document.addEventListener('alpine:init', function() {
+        Alpine.data('appState', function() {
+            return {
+                isEditMode: false,
+                clickMode: 'none',
+                searchQuery: '',
+                searchResults: [],
+                newNode: {
+                    id: '',
+                    label: '',
+                    url: ''
+                },
+                selectedTargets: [], // Array of {id, label}
+                selectedSources: [], // Array of {id, label}
                 
-                cy.batch(function() {
-                    setResetFocus(cy);
-                    setStyle(cy, {
-                        'background-color': dimColor,
-                        'line-color': dimColor,
-                        'target-arrow-color': dimColor,
-                        'color': dimColor
-                    });
-                    setFocus(nodeData.cyNode, successorColor, predecessorsColor, edgeActiveWidth, arrowActiveScale);
-                });
-                
-                cy.animate({
-                    center: { eles: nodeData.cyNode }
-                }, { duration: 500 });
-            },
+                init: function() {
+                    // Alpine.js가 초기화될 때 전역 객체에 appState 인스턴스를 노출합니다.
+                    window.appStateInstance = this;
+                },
 
-            handleNodeClick(node) {
-                if (!this.isEditMode) {
-                    var url = node.data('url');
-                    gtag('event', 'Click', {
-                        'event_category': 'node',
-                        'event_label': node.id(),
-                        'value': 1
-                    });
-                    if(url && url !== '') window.open(url);
-                    return;
-                }
-
-                const nodeId = node.id();
-                const nodeLabel = node.data('label') || nodeId;
-
-                if (this.clickMode === 'target') {
-                    const exists = this.selectedTargets.find(t => t.id === nodeId);
-                    if (exists) this.selectedTargets = this.selectedTargets.filter(t => t.id !== nodeId);
-                    else this.selectedTargets.push({ id: nodeId, label: nodeLabel });
-                } else if (this.clickMode === 'source') {
-                    const exists = this.selectedSources.find(s => s.id === nodeId);
-                    if (exists) this.selectedSources = this.selectedSources.filter(s => s.id !== nodeId);
-                    else this.selectedSources.push({ id: nodeId, label: nodeLabel });
-                }
-                this.updateGraphSelectionStyles();
-            },
-
-            removeTarget(id) {
-                this.selectedTargets = this.selectedTargets.filter(t => t.id !== id);
-                this.updateGraphSelectionStyles();
-            },
-
-            removeSource(id) {
-                this.selectedSources = this.selectedSources.filter(s => s.id !== id);
-                this.updateGraphSelectionStyles();
-            },
-
-            updateGraphSelectionStyles() {
-                cy.nodes().removeClass('selected-target selected-source');
-                this.selectedTargets.forEach(t => cy.getElementById(t.id).addClass('selected-target'));
-                this.selectedSources.forEach(s => cy.getElementById(s.id).addClass('selected-source'));
-            },
-
-            addNode() {
-                var idInput = this.newNode.id.trim();
-                var labelInput = this.newNode.label.trim();
-                var urlInput = this.newNode.url.trim();
-
-                if (!idInput) {
-                    alert('노드 ID를 입력해주세요.');
-                    return;
-                }
-
-                if (cy.getElementById(idInput).length > 0) {
-                    alert('이미 존재하는 ID입니다. 다른 ID를 사용해주세요.');
-                    return;
-                }
-
-                var elementsToAdd = [];
-                elementsToAdd.push({
-                    group: 'nodes',
-                    data: {
-                        id: idInput,
-                        label: labelInput || idInput,
-                        url: urlInput
+                toggleEditMode: function() {
+                    if (this.isEditMode) {
+                        setResetFocus(cy);
+                        cy.autoungrabify(true);
+                        cy.boxSelectionEnabled(false);
+                        this.updateGraphSelectionStyles();
+                    } else {
+                        this.selectedTargets = [];
+                        this.selectedSources = [];
+                        this.updateGraphSelectionStyles();
+                        cy.autoungrabify(false);
+                        cy.boxSelectionEnabled(true);
                     }
-                });
+                },
 
-                this.selectedTargets.forEach(t => {
-                    elementsToAdd.push({
-                        group: 'edges',
-                        data: { id: t.id + '-' + idInput, source: t.id, target: idInput }
+                handleSearch: function() {
+                    var query = this.searchQuery.trim().toLowerCase();
+                    if (!query) {
+                        this.searchResults = [];
+                        return;
+                    }
+
+                    if (!cy) return; // cy가 아직 초기화되지 않았을 경우 방어
+
+                    this.searchResults = cy.nodes().filter(function(node) {
+                        var label = (node.data('label') || '').toLowerCase();
+                        var id = node.id().toLowerCase();
+                        return label.includes(query) || id.includes(query);
+                    }).map(function(node) {
+                        return {
+                            id: node.id(),
+                            label: node.data('label') || node.id(),
+                            cyNode: node
+                        };
                     });
-                });
+                },
 
-                this.selectedSources.forEach(s => {
-                    elementsToAdd.push({
-                        group: 'edges',
-                        data: { id: idInput + '-' + s.id, source: idInput, target: s.id }
-                    });
-                });
-
-                var srcParam = getParameterByName('src');
-                var payload = { src: srcParam || 'data', elements: elementsToAdd };
-
-                fetch('/api/add-elements', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Server response:', data);
-                    cy.add(elementsToAdd);
-                    pageRank = cy.elements().pageRank();
-                    setResetFocus(cy);
-                    cy.layout({
-                        name: 'cose-bilkent', animate: true, animationDuration: 500,
-                        gravityRangeCompound: 1.5, fit: true, tile: true
-                    }).run();
-
-                    this.newNode = { id: '', label: '', url: '' };
-                    this.selectedTargets = [];
-                    this.selectedSources = [];
-                    this.updateGraphSelectionStyles();
+                selectSearchResult: function(nodeData) {
+                    this.searchQuery = '';
+                    this.searchResults = [];
                     
-                    alert('노드가 성공적으로 추가되고 파일에 저장되었습니다!');
-                })
-                .catch(error => {
-                    console.error('Error saving elements:', error);
-                    alert('서버 저장 중 오류가 발생했습니다. 개발자 도구 콘솔을 확인해주세요.');
-                });
-            }
-        }));
+                    cy.batch(function() {
+                        setResetFocus(cy);
+                        setStyle(cy, {
+                            'background-color': dimColor,
+                            'line-color': dimColor,
+                            'target-arrow-color': dimColor,
+                            'color': dimColor
+                        });
+                        setFocus(nodeData.cyNode, successorColor, predecessorsColor, edgeActiveWidth, arrowActiveScale);
+                    });
+                    
+                    cy.animate({
+                        center: { eles: nodeData.cyNode }
+                    }, { duration: 500 });
+                },
+
+                handleNodeClick: function(node) {
+                    if (!this.isEditMode) {
+                        var url = node.data('url');
+                        gtag('event', 'Click', {
+                            'event_category': 'node',
+                            'event_label': node.id(),
+                            'value': 1
+                        });
+                        if(url && url !== '') window.open(url);
+                        return;
+                    }
+
+                    var nodeId = node.id();
+                    var nodeLabel = node.data('label') || nodeId;
+
+                    if (this.clickMode === 'target') {
+                        var existsT = this.selectedTargets.find(function(t) { return t.id === nodeId; });
+                        if (existsT) this.selectedTargets = this.selectedTargets.filter(function(t) { return t.id !== nodeId; });
+                        else this.selectedTargets.push({ id: nodeId, label: nodeLabel });
+                    } else if (this.clickMode === 'source') {
+                        var existsS = this.selectedSources.find(function(s) { return s.id === nodeId; });
+                        if (existsS) this.selectedSources = this.selectedSources.filter(function(s) { return s.id !== nodeId; });
+                        else this.selectedSources.push({ id: nodeId, label: nodeLabel });
+                    }
+                    this.updateGraphSelectionStyles();
+                },
+
+                removeTarget: function(id) {
+                    this.selectedTargets = this.selectedTargets.filter(function(t) { return t.id !== id; });
+                    this.updateGraphSelectionStyles();
+                },
+
+                removeSource: function(id) {
+                    this.selectedSources = this.selectedSources.filter(function(s) { return s.id !== id; });
+                    this.updateGraphSelectionStyles();
+                },
+
+                updateGraphSelectionStyles: function() {
+                    cy.nodes().removeClass('selected-target selected-source');
+                    this.selectedTargets.forEach(function(t) { cy.getElementById(t.id).addClass('selected-target'); });
+                    this.selectedSources.forEach(function(s) { cy.getElementById(s.id).addClass('selected-source'); });
+                },
+
+                addNode: function() {
+                    var idInput = this.newNode.id.trim();
+                    var labelInput = this.newNode.label.trim();
+                    var urlInput = this.newNode.url.trim();
+
+                    if (!idInput) {
+                        alert('노드 ID를 입력해주세요.');
+                        return;
+                    }
+
+                    if (cy.getElementById(idInput).length > 0) {
+                        alert('이미 존재하는 ID입니다. 다른 ID를 사용해주세요.');
+                        return;
+                    }
+
+                    var elementsToAdd = [];
+                    elementsToAdd.push({
+                        group: 'nodes',
+                        data: {
+                            id: idInput,
+                            label: labelInput || idInput,
+                            url: urlInput
+                        }
+                    });
+
+                    this.selectedTargets.forEach(function(t) {
+                        elementsToAdd.push({
+                            group: 'edges',
+                            data: { id: t.id + '-' + idInput, source: t.id, target: idInput }
+                        });
+                    });
+
+                    this.selectedSources.forEach(function(s) {
+                        elementsToAdd.push({
+                            group: 'edges',
+                            data: { id: idInput + '-' + s.id, source: idInput, target: s.id }
+                        });
+                    });
+
+                    var srcParam = getParameterByName('src');
+                    var payload = { src: srcParam || 'data', elements: elementsToAdd };
+
+                    var self = this;
+
+                    fetch('/api/add-elements', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(function(response) {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        console.log('Server response:', data);
+                        cy.add(elementsToAdd);
+                        pageRank = cy.elements().pageRank();
+                        setResetFocus(cy);
+                        cy.layout({
+                            name: 'cose-bilkent', animate: true, animationDuration: 500,
+                            gravityRangeCompound: 1.5, fit: true, tile: true
+                        }).run();
+
+                        self.newNode = { id: '', label: '', url: '' };
+                        self.selectedTargets = [];
+                        self.selectedSources = [];
+                        self.updateGraphSelectionStyles();
+                        
+                        alert('노드가 성공적으로 추가되고 파일에 저장되었습니다!');
+                    })
+                    .catch(function(error) {
+                        console.error('Error saving elements:', error);
+                        alert('서버 저장 중 오류가 발생했습니다. 개발자 도구 콘솔을 확인해주세요.');
+                    });
+                }
+            };
+        });
     });
 
     // Global variables for Cytoscape styling
@@ -427,29 +440,28 @@
 
             // Bind Cytoscape events to Alpine state
             cy.on('tap', 'node', function (e) {
-                // Access Alpine state from the body element
-                var appState = Alpine.$data(document.body);
-                appState.handleNodeClick(e.target);
+                if (window.appStateInstance) {
+                    window.appStateInstance.handleNodeClick(e.target);
+                    // Force Alpine to re-evaluate state since this happened outside its event loop
+                    if (window.appStateInstance.$apply) window.appStateInstance.$apply();
+                }
             });
 
             cy.on('tap', function (e) {
                 if(e.cy === e.target){
-                    var appState = Alpine.$data(document.body);
-                    if (!appState.isEditMode) {
+                    if (window.appStateInstance && !window.appStateInstance.isEditMode) {
                         setResetFocus(e.cy);
                     }
                 }
             });
 
             cy.on('tapend mouseout', 'node', function(e){
-                var appState = Alpine.$data(document.body);
-                if (appState.isEditMode) return;
+                if (window.appStateInstance && window.appStateInstance.isEditMode) return;
                 setResetFocus(e.cy);
             });
 
             cy.on('tapstart mouseover', 'node', function(e){
-                var appState = Alpine.$data(document.body);
-                if (appState.isEditMode) return;
+                if (window.appStateInstance && window.appStateInstance.isEditMode) return;
                 setResetFocus(e.cy);
                 setStyle(cy, {
                     'background-color':dimColor,
