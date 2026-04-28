@@ -3,7 +3,7 @@ document.addEventListener('alpine:init', function() {
     Alpine.data('appState', function() {
         return {
             // 레이아웃
-            sidebarOpen:     false,
+            sidebarOpen:     true,
             viewerOpen:      false,
             viewerNodeKey:   '',
             viewerNodeLabel: '',
@@ -69,11 +69,10 @@ document.addEventListener('alpine:init', function() {
             },
 
             switchGraph: async function(graphId) {
-                if (this.currentGraphId === graphId) { this.sidebarOpen = false; return; }
+                if (this.currentGraphId === graphId) return;
                 this.currentGraphId   = graphId;
                 this.currentGraphName = this.graphs.find(g => g.id === graphId)?.name || '';
                 this.viewerOpen       = false;
-                this.sidebarOpen      = false;
                 this.cancelConnecting();
                 this.cancelInlineEditor();
 
@@ -269,6 +268,7 @@ document.addEventListener('alpine:init', function() {
             handleNodeClick: function(node) {
                 // __pending__ 노드는 클릭 무시
                 if (node.id() === '__pending__') return;
+                this.cancelInlineEditor();
 
                 if (!this.isEditMode) {
                     gtag('event', 'Click', { 'event_category': 'node', 'event_label': node.id(), 'value': 1 });

@@ -28,19 +28,87 @@
 </head>
 <body class="overflow-hidden">
 
-<div class="drawer h-screen" x-data="appState()">
-    <input id="sidebar-toggle" type="checkbox" class="drawer-toggle" x-model="sidebarOpen">
+<div class="flex h-screen overflow-hidden" x-data="appState()">
+
+    <!-- ── 사이드바 (기본 열림, 슬라이드 푸시) ──────────────────────────── -->
+    <aside class="w-60 bg-base-100 border-r border-base-200 flex flex-col shrink-0 overflow-hidden transition-[margin] duration-300 ease-in-out"
+           :class="sidebarOpen ? 'ml-0' : '-ml-60'">
+
+        <!-- 헤더 -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-base-200 shrink-0">
+            <span class="font-bold text-base">Seomal</span>
+            <!-- < 닫기 버튼 -->
+            <button class="btn btn-ghost btn-xs btn-square" @click="sidebarOpen = false" title="사이드바 닫기">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- 그래프 목록 -->
+        <ul class="menu flex-1 overflow-y-auto p-2 gap-0.5">
+            <template x-for="graph in graphs" :key="graph.id">
+                <li class="group">
+                    <a class="justify-between pr-1"
+                       :class="{'active': graph.id === currentGraphId}"
+                       @click="switchGraph(graph.id)">
+                        <span class="truncate text-sm" x-text="graph.name"></span>
+                        <button class="btn btn-ghost btn-xs btn-square shrink-0 opacity-0 group-hover:opacity-50 hover:!opacity-100"
+                                @click.stop="deleteGraph(graph.id)">×</button>
+                    </a>
+                </li>
+            </template>
+            <li x-show="graphs.length === 0">
+                <span class="text-xs text-base-content/40 cursor-default hover:bg-transparent">그래프가 없습니다.</span>
+            </li>
+        </ul>
+
+        <!-- 새 그래프 -->
+        <div class="p-3 border-t border-base-200 shrink-0">
+            <div x-show="!showNewGraphInput">
+                <button class="btn btn-ghost btn-sm w-full justify-start gap-2" @click="showNewGraph()">
+                    <span class="text-base leading-none font-light">+</span> 새 그래프
+                </button>
+            </div>
+            <div class="flex gap-1.5" x-show="showNewGraphInput">
+                <input type="text" class="input input-bordered input-xs flex-1"
+                       placeholder="그래프 이름"
+                       x-model="newGraphName"
+                       x-ref="newGraphInput"
+                       @keyup.enter="createGraph()"
+                       @keyup.escape="cancelNewGraph()">
+                <button class="btn btn-neutral btn-xs" @click="createGraph()">추가</button>
+            </div>
+        </div>
+
+        <!-- 잠금 토글 -->
+        <div class="px-4 py-3 border-t border-base-200 flex items-center gap-3 shrink-0">
+            <input type="checkbox" class="toggle toggle-sm toggle-neutral" x-model="isEditMode">
+            <div class="flex items-center gap-1.5">
+                <!-- 잠금 아이콘 (잠금 상태) -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="!isEditMode">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                <!-- 잠금 해제 아이콘 -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="isEditMode">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                </svg>
+                <span class="text-sm font-medium" x-text="isEditMode ? '잠금 해제' : '잠금'"></span>
+            </div>
+        </div>
+    </aside>
 
     <!-- ── 메인 콘텐츠 ──────────────────────────────────────────────────── -->
-    <div class="drawer-content flex flex-col h-screen overflow-hidden">
+    <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
 
         <!-- 네비바 -->
         <div class="navbar bg-base-100 border-b border-base-200 min-h-12 h-12 px-3 shrink-0 gap-2">
-            <label for="sidebar-toggle" class="btn btn-ghost btn-sm btn-square">
+            <!-- 사이드바 토글 버튼 -->
+            <button class="btn btn-ghost btn-sm btn-square" @click="sidebarOpen = !sidebarOpen" title="사이드바 토글">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
-            </label>
+            </button>
             <span class="font-bold text-sm truncate max-w-xs" x-text="currentGraphName || 'Seomal'"></span>
             <div class="flex-1"></div>
             <!-- 검색 -->
@@ -63,21 +131,19 @@
             </div>
         </div>
 
-        <!-- 그래프 + 뷰어 -->
+        <!-- 그래프 + 마크다운 뷰어 -->
         <div class="flex flex-1 overflow-hidden relative">
             <div id="cy"></div>
 
             <!-- 수정 모드 힌트 바 -->
             <div class="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2"
                  x-show="isEditMode" x-cloak>
-                <!-- 기본 힌트 -->
                 <div class="bg-neutral/80 text-neutral-content text-xs px-4 py-2 rounded-full shadow flex items-center gap-3"
                      x-show="connectingFrom === null">
                     <span>더블클릭 → 노드 추가</span>
                     <span class="opacity-40">|</span>
                     <span>노드 클릭 → 연결 시작</span>
                 </div>
-                <!-- 연결 중 힌트 -->
                 <div class="bg-warning text-warning-content text-xs px-4 py-2 rounded-full shadow flex items-center gap-2"
                      x-show="connectingFrom !== null">
                     <span class="w-1.5 h-1.5 rounded-full bg-warning-content animate-pulse inline-block"></span>
@@ -86,12 +152,11 @@
                 </div>
             </div>
 
-            <!-- 인라인 노드 편집기 -->
+            <!-- 인라인 노드 편집기 (더블클릭으로 생성) -->
             <div class="absolute z-50 bg-base-100 shadow-xl rounded-2xl border border-base-200 p-3 w-48"
                  x-show="inlineEditor.visible"
                  x-cloak
-                 :style="`left: ${inlineEditor.x}px; top: ${inlineEditor.y}px; transform: translate(-50%, calc(-100% - 14px))`"
-                 @click.outside="cancelInlineEditor()">
+                 :style="`left: ${inlineEditor.x}px; top: ${inlineEditor.y}px; transform: translate(-50%, calc(-100% - 14px))`">
                 <p class="text-xs text-base-content/40 mb-1.5 font-medium">새 노드</p>
                 <input type="text"
                        class="input input-bordered input-xs w-full mb-2"
@@ -128,7 +193,6 @@
 
                 <!-- 뷰 모드 -->
                 <div class="flex-1 overflow-y-auto" x-show="!viewerEditMode">
-                    <!-- 빈 상태 -->
                     <div class="flex flex-col items-center justify-center h-full gap-3 text-base-content/30"
                          x-show="!viewerContent.trim()">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,7 +201,6 @@
                         <p class="text-xs text-center px-6">아직 내용이 없습니다.<br>편집 버튼을 눌러 마크다운을 작성하세요.</p>
                         <button class="btn btn-ghost btn-xs" @click="toggleViewerEdit()">편집 시작</button>
                     </div>
-                    <!-- 렌더된 마크다운 -->
                     <div class="p-4 markdown-content text-sm"
                          x-show="viewerContent.trim()"
                          x-html="renderMarkdown(viewerContent)"></div>
@@ -156,61 +219,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- ── 사이드바 ────────────────────────────────────────────────────────── -->
-    <div class="drawer-side z-40">
-        <label for="sidebar-toggle" class="drawer-overlay"></label>
-        <aside class="w-60 bg-base-100 flex flex-col h-screen border-r border-base-200">
-
-            <div class="flex items-center justify-between px-4 py-3 border-b border-base-200 shrink-0">
-                <span class="font-bold text-base">Seomal</span>
-                <label for="sidebar-toggle" class="btn btn-ghost btn-xs btn-square">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </label>
-            </div>
-
-            <ul class="menu flex-1 overflow-y-auto p-2 gap-0.5">
-                <template x-for="graph in graphs" :key="graph.id">
-                    <li class="group">
-                        <a class="justify-between pr-1"
-                           :class="{'active': graph.id === currentGraphId}"
-                           @click="switchGraph(graph.id)">
-                            <span class="truncate text-sm" x-text="graph.name"></span>
-                            <button class="btn btn-ghost btn-xs btn-square shrink-0 opacity-0 group-hover:opacity-50 hover:!opacity-100"
-                                    @click.stop="deleteGraph(graph.id)">×</button>
-                        </a>
-                    </li>
-                </template>
-                <li x-show="graphs.length === 0">
-                    <span class="text-xs text-base-content/40 cursor-default hover:bg-transparent">그래프가 없습니다.</span>
-                </li>
-            </ul>
-
-            <div class="p-3 border-t border-base-200 shrink-0">
-                <div x-show="!showNewGraphInput">
-                    <button class="btn btn-ghost btn-sm w-full justify-start gap-2" @click="showNewGraph()">
-                        <span class="text-base leading-none font-light">+</span> 새 그래프
-                    </button>
-                </div>
-                <div class="flex gap-1.5" x-show="showNewGraphInput">
-                    <input type="text" class="input input-bordered input-xs flex-1"
-                           placeholder="그래프 이름"
-                           x-model="newGraphName"
-                           x-ref="newGraphInput"
-                           @keyup.enter="createGraph()"
-                           @keyup.escape="cancelNewGraph()">
-                    <button class="btn btn-neutral btn-xs" @click="createGraph()">추가</button>
-                </div>
-            </div>
-
-            <div class="px-4 py-3 border-t border-base-200 flex items-center gap-3 shrink-0">
-                <input type="checkbox" class="toggle toggle-sm toggle-neutral" x-model="isEditMode">
-                <span class="text-sm font-medium" x-text="isEditMode ? '수정 모드' : '뷰어 모드'"></span>
-            </div>
-        </aside>
     </div>
 </div>
 
