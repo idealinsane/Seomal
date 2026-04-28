@@ -66,15 +66,19 @@
                         var label = (node.data('label') || '').toLowerCase();
                         var id = node.id().toLowerCase();
                         return label.includes(query) || id.includes(query);
-                    }).map(function(node) {
-                        return {
-                            id: node.id(),
-                            label: node.data('label') || node.id()
-                        };
                     });
                     
-                    // Alpine.js Proxy 객체 이슈 방지를 위해 일반 배열로 변환하여 할당
-                    this.searchResults = Array.from(results).slice(0, 20); // 최대 20개까지만 표시
+                    var newResults = [];
+                    var max = Math.min(results.length, 20);
+                    for (var i = 0; i < max; i++) {
+                        var node = results[i];
+                        newResults.push({
+                            id: node.id(),
+                            label: node.data('label') || node.id()
+                        });
+                    }
+                    
+                    this.searchResults = newResults;
                 },
 
                 selectSearchResult: function(nodeData) {
