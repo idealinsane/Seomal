@@ -2,6 +2,16 @@
 
         body { margin: 0; overflow: hidden; }
 
+        /* 편집 모드 커서 */
+        body.edit-mode #cy { cursor: crosshair; }
+
+        /* 인라인 에디터 등장 애니메이션 */
+        @keyframes editor-pop {
+            from { opacity: 0; transform: translate(-50%, calc(-100% - 14px)) scale(0.88); }
+            to   { opacity: 1; transform: translate(-50%, calc(-100% - 14px)) scale(1); }
+        }
+        .inline-editor-popup { animation: editor-pop 0.15s ease-out; }
+
         #cy {
             flex: 1;
             min-width: 0;

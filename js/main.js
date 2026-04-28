@@ -39,6 +39,7 @@ document.addEventListener('alpine:init', function() {
                 initCytoscape();
 
                 this.$watch('isEditMode', (value) => {
+                    document.body.classList.toggle('edit-mode', value);
                     this.cancelConnecting();
                     this.cancelInlineEditor();
                     if (value) {
@@ -167,17 +168,23 @@ document.addEventListener('alpine:init', function() {
             // ─── 인라인 노드 편집기 ──────────────────────────────────────────
 
             showInlineEditor: function(rendX, rendY, graphX, graphY) {
-                // 이전 pending 노드 제거
-                const prev = cy.getElementById('__pending__');
+                var prev = cy.getElementById('__pending__');
                 if (prev.length > 0) prev.remove();
 
                 cy.add({
                     group: 'nodes',
-                    data: { id: '__pending__', label: '' },
+                    data: { id: '__pending__', label: '+' },
                     position: { x: graphX, y: graphY },
                     classes: 'pending-node'
                 });
-                this.inlineEditor = { visible: true, x: rendX, y: rendY, graphX, graphY, label: '' };
+
+                // 에디터가 캔버스 밖으로 잘리지 않도록 위치 보정
+                var cyEl = document.getElementById('cy');
+                var edW = 192, edH = 120, gap = 14;
+                var x = Math.max(edW / 2, Math.min(rendX, cyEl.offsetWidth  - edW / 2));
+                var y = Math.max(edH + gap, Math.min(rendY, cyEl.offsetHeight - 20));
+
+                this.inlineEditor = { visible: true, x: x, y: y, graphX: graphX, graphY: graphY, label: '' };
                 this.$nextTick(() => this.$refs.inlineEditorInput?.focus());
             },
 
@@ -455,7 +462,8 @@ function initCytoscape() {
                     'width':              0.3,
                     'target-arrow-shape': 'triangle',
                     'line-color':         edgeBGColor,
-                    'target-arrow-color': edgeBGColor
+                    'target-arrow-color': edgeBGColor,
+                    'arrow-scale':        arrowScale
                 }
             },
             { selector: '.prepare',          style: { 'opacity': '0.5' } },
@@ -465,21 +473,24 @@ function initCytoscape() {
                 'border-opacity': 1
             }},
             { selector: '.pending-node', style: {
-                'background-color': '#e8ecf0',
-                'border-width':     2,
-                'border-color':     '#4f5b66',
-                'border-style':     'dashed',
-                'border-opacity':   0.8,
-                'width':            nodeMinSize + 4,
-                'height':           nodeMinSize + 4,
-                'opacity':          0.7,
-                'label':            ''
+                'background-color': '#fed766',
+                'border-width':     0,
+                'width':            16,
+                'height':           16,
+                'opacity':          1,
+                'font-size':        8,
+                'color':            '#4f5b66',
+                'label':            '+'
             }}
         ],
         layout: { name: 'preset' }
     });
 
+    // 수동 더블탭 감지용 상태 (dbltap 이벤트보다 신뢰성이 높음)
+    var _bgTap = { time: 0, x: 0, y: 0 };
+
     cy.on('tap', 'node', function(e) {
+        _bgTap = { time: 0, x: 0, y: 0 }; // 노드 탭 시 더블탭 타이머 리셋
         if (window.appStateInstance) window.appStateInstance.handleNodeClick(e.target);
     });
 
@@ -487,23 +498,28 @@ function initCytoscape() {
         if (e.cy !== e.target) return;
         var inst = window.appStateInstance;
         if (!inst) return;
-        if (inst.isEditMode) {
+
+        if (!inst.isEditMode) {
+            setResetFocus(e.cy);
+            _bgTap = { time: 0, x: 0, y: 0 };
+            return;
+        }
+
+        // 수정 모드: 수동 더블탭 감지
+        var now = Date.now();
+        var rp  = e.renderedPosition;
+        var dx  = rp.x - _bgTap.x;
+        var dy  = rp.y - _bgTap.y;
+
+        if (now - _bgTap.time < 350 && Math.sqrt(dx * dx + dy * dy) < 25) {
+            // 더블탭 → 인라인 에디터 표시
+            _bgTap = { time: 0, x: 0, y: 0 };
+            inst.showInlineEditor(rp.x, rp.y, e.position.x, e.position.y);
+        } else {
+            // 싱글탭 → 연결/에디터 취소
             inst.cancelConnecting();
             inst.cancelInlineEditor();
-        } else {
-            setResetFocus(e.cy);
-        }
-    });
-
-    // 빈 공간 더블클릭 → 노드 추가 (수정 모드에서만)
-    cy.on('dbltap', function(e) {
-        if (e.cy !== e.target) return;
-        var inst = window.appStateInstance;
-        if (inst && inst.isEditMode) {
-            inst.showInlineEditor(
-                e.renderedPosition.x, e.renderedPosition.y,
-                e.position.x,        e.position.y
-            );
+            _bgTap = { time: now, x: rp.x, y: rp.y };
         }
     });
 
