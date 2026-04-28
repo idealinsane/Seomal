@@ -1,62 +1,105 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+const path    = require('path');
+const cors    = require('cors');
+const { PrismaClient } = require('@prisma/client');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const app    = express();
+const prisma = new PrismaClient();
+const PORT   = process.env.PORT || 3000;
 
-// 미들웨어 설정
 app.use(cors());
-app.use(bodyParser.json());
-
-// 정적 파일 제공 (현재 디렉토리를 루트로)
+app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// 노드/엣지 추가 API 엔드포인트
-app.post('/api/add-elements', (req, res) => {
-    const { src, elements } = req.body;
-    
-    if (!elements || !Array.isArray(elements)) {
-        return res.status(400).json({ error: 'Invalid elements data' });
-    }
+// ─── Graphs ──────────────────────────────────────────────────────────────────
 
-    // 대상 JSON 파일 경로 결정 (기본값: data.json)
-    const filename = src ? `${src}.json` : 'data.json';
-    const filePath = path.join(__dirname, 'data', filename);
-
-    // 파일 읽기
-    fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-            console.error('Error reading file:', err);
-            return res.status(500).json({ error: 'Failed to read data file' });
-        }
-
-        try {
-            // 기존 데이터 파싱
-            const currentData = JSON.parse(data);
-            
-            // 새 데이터 추가
-            const updatedData = currentData.concat(elements);
-
-            // 파일에 다시 쓰기 (들여쓰기 2칸으로 예쁘게 포맷팅)
-            fs.writeFile(filePath, JSON.stringify(updatedData, null, 2), 'utf8', (writeErr) => {
-                if (writeErr) {
-                    console.error('Error writing file:', writeErr);
-                    return res.status(500).json({ error: 'Failed to save data' });
-                }
-                
-                res.json({ success: true, message: 'Elements successfully added and saved to ' + filename });
-            });
-        } catch (parseErr) {
-            console.error('Error parsing JSON:', parseErr);
-            res.status(500).json({ error: 'Invalid JSON format in data file' });
-        }
+app.get('/api/graphs', async (req, res) => {
+    const graphs = await prisma.graph.findMany({
+        include: { _count: { select: { nodes: true } } },
+        orderBy: { createdAt: 'asc' }
     });
+    res.json(graphs.map(g => ({ id: g.id, name: g.name, nodeCount: g._count.nodes })));
 });
 
-// 서버 시작
+app.post('/api/graphs', async (req, res) => {
+    const { name } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
+    const graph = await prisma.graph.create({ data: { name: name.trim() } });
+    res.json({ id: graph.id, name: graph.name, nodeCount: 0 });
+});
+
+app.patch('/api/graphs/:id', async (req, res) => {
+    const { name } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
+    const graph = await prisma.graph.update({
+        where: { id: parseInt(req.params.id) },
+        data:  { name: name.trim() }
+    });
+    res.json({ id: graph.id, name: graph.name });
+});
+
+app.delete('/api/graphs/:id', async (req, res) => {
+    await prisma.graph.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ ok: true });
+});
+
+// ─── Elements ────────────────────────────────────────────────────────────────
+
+app.get('/api/graphs/:id/elements', async (req, res) => {
+    const graphId = parseInt(req.params.id);
+    const [nodes, edges] = await Promise.all([
+        prisma.node.findMany({ where: { graphId } }),
+        prisma.edge.findMany({ where: { graphId } })
+    ]);
+    res.json([
+        ...nodes.map(n => ({
+            group: 'nodes',
+            data: { id: n.key, label: n.label, url: n.url, content: n.content }
+        })),
+        ...edges.map(e => ({
+            group: 'edges',
+            data: { id: `${e.source}-${e.target}`, source: e.source, target: e.target }
+        }))
+    ]);
+});
+
+app.post('/api/graphs/:id/elements', async (req, res) => {
+    const graphId  = parseInt(req.params.id);
+    const { elements } = req.body;
+    if (!Array.isArray(elements)) return res.status(400).json({ error: 'Invalid elements' });
+
+    for (const el of elements) {
+        if (el.group === 'nodes') {
+            await prisma.node.upsert({
+                where:  { graphId_key: { graphId, key: el.data.id } },
+                create: { key: el.data.id, label: el.data.label || el.data.id, url: el.data.url || '', content: '', graphId },
+                update: {}
+            });
+        } else if (el.group === 'edges') {
+            await prisma.edge.upsert({
+                where:  { graphId_source_target: { graphId, source: el.data.source, target: el.data.target } },
+                create: { source: el.data.source, target: el.data.target, graphId },
+                update: {}
+            });
+        }
+    }
+    res.json({ ok: true });
+});
+
+// ─── Node content ─────────────────────────────────────────────────────────────
+
+app.patch('/api/nodes/:graphId/:key/content', async (req, res) => {
+    const graphId = parseInt(req.params.graphId);
+    const { content } = req.body;
+    await prisma.node.update({
+        where:  { graphId_key: { graphId, key: req.params.key } },
+        data:   { content: content ?? '' }
+    });
+    res.json({ ok: true });
+});
+
+// ─── Server ───────────────────────────────────────────────────────────────────
+
 app.listen(PORT, () => {
     console.log(`\n🚀 Seomal Server is running!`);
     console.log(`👉 Open your browser and visit: http://localhost:${PORT}\n`);

@@ -8,7 +8,9 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:import": "node scripts/migrate-json.js"
   },
   "repository": {
     "type": "git",
@@ -21,10 +23,12 @@
   },
   "homepage": "https://github.com/web-n/SerieseN#readme",
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "body-parser": "^2.2.2",
     "cors": "^2.8.6",
     "cytoscape": "^3.3.0",
     "cytoscape-cose-bilkent": "^4.0.0",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "prisma": "^6.19.3"
   }
 }

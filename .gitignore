@@ -1,1 +1,3 @@
 .ideanode_modules/
+data/seomal.db
+prisma/migrations
