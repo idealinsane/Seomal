@@ -1,4 +1,4 @@
-<html>
+<html data-theme="light">
 <head>
     <title>Seomal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
@@ -8,6 +8,13 @@
         function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
         gtag('config', 'UA-80887304-4');
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['"Open Sans Condensed"', 'sans-serif'] } } }
+        }
     </script>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300" rel="stylesheet">
@@ -19,72 +26,104 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body x-data="appState()">
-<div id="mode-toggle-container">
-    <label class="switch">
-        <input type="checkbox" x-model="isEditMode">
-        <span class="slider round"></span>
-    </label>
-    <span id="mode-label" x-text="isEditMode ? '수정 모드' : '뷰어 모드'"></span>
+
+<!-- 모드 토글 -->
+<div class="absolute top-5 left-5 z-50 flex items-center gap-2.5 bg-base-100 px-4 py-2 rounded-full shadow-md border border-base-200">
+    <input type="checkbox" class="toggle toggle-sm toggle-neutral" x-model="isEditMode">
+    <span class="text-sm font-bold text-base-content" x-text="isEditMode ? '수정 모드' : '뷰어 모드'"></span>
 </div>
-<div id="search-container" @click.outside="searchResults = []">
-    <input type="text" id="node-search" placeholder="노드 검색 (이름 또는 ID)..." autocomplete="off"
-           x-model="searchQuery" @keyup="handleSearch()">
-    <div id="search-results" x-show="searchResults.length > 0">
+
+<!-- 검색 -->
+<div class="absolute top-[72px] left-5 z-50 w-64" @click.outside="searchResults = []">
+    <input type="text"
+           class="input input-bordered input-sm w-full rounded-full shadow-sm focus:outline-none focus:border-neutral"
+           placeholder="노드 검색 (이름 또는 ID)..."
+           autocomplete="off"
+           x-model="searchQuery"
+           @keyup="handleSearch()">
+    <div class="absolute mt-1 w-full bg-base-100 rounded-xl shadow-lg border border-base-200 max-h-52 overflow-y-auto z-10"
+         x-show="searchResults.length > 0">
         <template x-for="node in searchResults" :key="node.id">
-            <div class="search-item" @click="selectSearchResult(node)">
+            <div class="px-4 py-2.5 text-sm cursor-pointer border-b border-base-200 last:border-0 hover:bg-base-200 hover:text-primary font-medium transition-colors"
+                 @click="selectSearchResult(node)">
                 <span x-text="node.label + ' (' + node.id + ')'"></span>
             </div>
         </template>
     </div>
 </div>
-<div id="add-node-panel" x-show="isEditMode">
-    <h3>새 노드 추가</h3>
-    <div class="click-mode-selector">
-        <strong>그래프에서 클릭하여 선택:</strong>
-        <div class="segment-control">
-            <button type="button" class="segment-btn" :class="{'active': clickMode === 'none'}" @click="clickMode = 'none'">일반</button>
-            <button type="button" class="segment-btn target-btn" :class="{'active': clickMode === 'target'}" @click="clickMode = 'target'">선행(파랑)</button>
-            <button type="button" class="segment-btn source-btn" :class="{'active': clickMode === 'source'}" @click="clickMode = 'source'">후행(빨강)</button>
+
+<!-- 노드 추가 패널 (수정 모드) -->
+<div class="card bg-base-100 shadow-xl absolute top-5 right-5 z-50 w-64 border border-base-200"
+     x-show="isEditMode" x-cloak>
+    <div class="card-body p-4 gap-3">
+
+        <h3 class="card-title text-base">새 노드 추가</h3>
+
+        <!-- 클릭 모드 선택 -->
+        <div>
+            <p class="text-xs font-semibold text-base-content/50 mb-2">그래프에서 클릭하여 선택:</p>
+            <div class="join w-full">
+                <button type="button" class="join-item btn btn-xs flex-1"
+                        :class="clickMode === 'none' ? 'btn-neutral' : ''"
+                        @click="clickMode = 'none'">일반</button>
+                <button type="button" class="join-item btn btn-xs flex-1"
+                        :class="clickMode === 'target' ? 'btn-info' : ''"
+                        @click="clickMode = 'target'">선행</button>
+                <button type="button" class="join-item btn btn-xs flex-1"
+                        :class="clickMode === 'source' ? 'btn-error' : ''"
+                        @click="clickMode = 'source'">후행</button>
+            </div>
         </div>
-    </div>
-    <div class="input-group">
-        <label for="node-id">ID (필수)</label>
-        <input type="text" id="node-id" placeholder="예: NEW_NODE" x-model="newNode.id" required>
-    </div>
-    <div class="input-group">
-        <label for="node-label">이름 (Label)</label>
-        <input type="text" id="node-label" placeholder="예: 새로운 과목" x-model="newNode.label">
-    </div>
-    <div class="input-group">
-        <label for="node-url">URL (선택)</label>
-        <input type="text" id="node-url" placeholder="https://..." x-model="newNode.url">
-    </div>
-    <div class="input-group">
-        <label>선행 노드 (이 노드를 위해 먼저 배워야 할 것)</label>
-        <div class="selected-nodes-container">
-            <template x-for="node in selectedTargets" :key="node.id">
-                <div class="node-badge target-badge">
-                    <span x-text="node.label"></span>
-                    <span @click="removeTarget(node.id)">×</span>
-                </div>
-            </template>
-            <div x-show="selectedTargets.length === 0">선택된 노드가 없습니다.</div>
+
+        <!-- 입력 필드 -->
+        <label class="form-control w-full">
+            <div class="label py-0.5"><span class="label-text text-xs">ID (필수)</span></div>
+            <input type="text" class="input input-bordered input-xs w-full"
+                   placeholder="예: NEW_NODE" x-model="newNode.id">
+        </label>
+        <label class="form-control w-full">
+            <div class="label py-0.5"><span class="label-text text-xs">이름 (Label)</span></div>
+            <input type="text" class="input input-bordered input-xs w-full"
+                   placeholder="예: 새로운 과목" x-model="newNode.label">
+        </label>
+        <label class="form-control w-full">
+            <div class="label py-0.5"><span class="label-text text-xs">URL (선택)</span></div>
+            <input type="text" class="input input-bordered input-xs w-full"
+                   placeholder="https://..." x-model="newNode.url">
+        </label>
+
+        <!-- 선행 노드 -->
+        <div>
+            <p class="text-xs font-semibold text-base-content/50 mb-1.5">선행 노드</p>
+            <div class="min-h-8 p-2 rounded-lg border border-dashed border-base-300 bg-base-200/40 flex flex-wrap gap-1.5">
+                <template x-for="node in selectedTargets" :key="node.id">
+                    <div class="badge badge-outline badge-info gap-1">
+                        <span x-text="node.label"></span>
+                        <button class="font-bold opacity-60 hover:opacity-100 leading-none" @click="removeTarget(node.id)">×</button>
+                    </div>
+                </template>
+                <span class="text-xs text-base-content/30" x-show="selectedTargets.length === 0">선택된 노드가 없습니다.</span>
+            </div>
         </div>
-    </div>
-    <div class="input-group">
-        <label>후행 노드 (이 노드를 배운 후 배울 수 있는 것)</label>
-        <div class="selected-nodes-container">
-            <template x-for="node in selectedSources" :key="node.id">
-                <div class="node-badge source-badge">
-                    <span x-text="node.label"></span>
-                    <span @click="removeSource(node.id)">×</span>
-                </div>
-            </template>
-            <div x-show="selectedSources.length === 0">선택된 노드가 없습니다.</div>
+
+        <!-- 후행 노드 -->
+        <div>
+            <p class="text-xs font-semibold text-base-content/50 mb-1.5">후행 노드</p>
+            <div class="min-h-8 p-2 rounded-lg border border-dashed border-base-300 bg-base-200/40 flex flex-wrap gap-1.5">
+                <template x-for="node in selectedSources" :key="node.id">
+                    <div class="badge badge-outline badge-error gap-1">
+                        <span x-text="node.label"></span>
+                        <button class="font-bold opacity-60 hover:opacity-100 leading-none" @click="removeSource(node.id)">×</button>
+                    </div>
+                </template>
+                <span class="text-xs text-base-content/30" x-show="selectedSources.length === 0">선택된 노드가 없습니다.</span>
+            </div>
         </div>
+
+        <button class="btn btn-neutral btn-sm w-full" @click="addNode()">노드 추가하기</button>
     </div>
-    <button id="add-node-btn" @click="addNode()">노드 추가하기</button>
 </div>
+
 <div id="cy"></div>
 </body>
 </html>
