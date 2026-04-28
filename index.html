@@ -2,45 +2,32 @@
 <head>
     <title>Seomal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-80887304-4"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-
-        function gtag() {
-            dataLayer.push(arguments);
-        }
-
+        function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
         gtag('config', 'UA-80887304-4');
     </script>
-<link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300" rel="stylesheet">
     <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise,fetch"></script>
     <script src="./cytoscape.3.13.0.min.js"></script>
     <script src="./cytoscape-cose-bilkent.4.0.0.js"></script>
     <script src="lib/TinyColor-1.0.0/tinycolor.js"></script>
-    <script
-            src="https://code.jquery.com/jquery-2.2.4.min.js"
-            integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
-            crossorigin="anonymous"></script>
     <script src="js/main.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
 </head>
 <body x-data="appState()">
-<!--<textarea id="msg" style="width:100%; height:200px;"></textarea>-->
 <div id="mode-toggle-container">
     <label class="switch">
-        <input type="checkbox" x-model="isEditMode" @change="toggleEditMode()">
+        <input type="checkbox" x-model="isEditMode">
         <span class="slider round"></span>
     </label>
     <span id="mode-label" x-text="isEditMode ? '수정 모드' : '뷰어 모드'"></span>
 </div>
 <div id="search-container" @click.outside="searchResults = []">
-    <input type="text" id="node-search" placeholder="노드 검색 (이름 또는 ID)..." autocomplete="off" 
+    <input type="text" id="node-search" placeholder="노드 검색 (이름 또는 ID)..." autocomplete="off"
            x-model="searchQuery" @keyup="handleSearch()">
     <div id="search-results" x-show="searchResults.length > 0">
         <template x-for="node in searchResults" :key="node.id">
