@@ -1585,5 +1585,53 @@
       "source": "edgecase",
       "target": "DATABASE1"
     }
+  },
+  {
+    "group": "nodes",
+    "data": {
+      "id": "fff",
+      "label": "fff",
+      "url": ""
+    }
+  },
+  {
+    "group": "edges",
+    "data": {
+      "id": "GIT2-CLI-VERSION-CONTROL-fff",
+      "source": "GIT2-CLI-VERSION-CONTROL",
+      "target": "fff"
+    }
+  },
+  {
+    "group": "edges",
+    "data": {
+      "id": "fff-WEB2JAVASCRIPT",
+      "source": "fff",
+      "target": "WEB2JAVASCRIPT"
+    }
+  },
+  {
+    "group": "nodes",
+    "data": {
+      "id": "abbs",
+      "label": "abbs",
+      "url": ""
+    }
+  },
+  {
+    "group": "edges",
+    "data": {
+      "id": "WEB1-abbs",
+      "source": "WEB1",
+      "target": "abbs"
+    }
+  },
+  {
+    "group": "edges",
+    "data": {
+      "id": "abbs-WEB2-HTTP",
+      "source": "abbs",
+      "target": "WEB2-HTTP"
+    }
   }
 ]
