@@ -31,21 +31,26 @@
                 init: function() {
                     // Alpine.js가 초기화될 때 전역 객체에 appState 인스턴스를 노출합니다.
                     window.appStateInstance = this;
+                    
+                    // 초기 상태 반영
+                    this.$watch('isEditMode', (value) => {
+                        if (value) {
+                            setResetFocus(cy);
+                            cy.autoungrabify(true);
+                            cy.boxSelectionEnabled(false);
+                            this.updateGraphSelectionStyles();
+                        } else {
+                            this.selectedTargets = [];
+                            this.selectedSources = [];
+                            this.updateGraphSelectionStyles();
+                            cy.autoungrabify(false);
+                            cy.boxSelectionEnabled(true);
+                        }
+                    });
                 },
 
                 toggleEditMode: function() {
-                    if (this.isEditMode) {
-                        setResetFocus(cy);
-                        cy.autoungrabify(true);
-                        cy.boxSelectionEnabled(false);
-                        this.updateGraphSelectionStyles();
-                    } else {
-                        this.selectedTargets = [];
-                        this.selectedSources = [];
-                        this.updateGraphSelectionStyles();
-                        cy.autoungrabify(false);
-                        cy.boxSelectionEnabled(true);
-                    }
+                    // $watch에서 처리하므로 여기서는 상태만 변경 (Alpine이 알아서 처리)
                 },
 
                 handleSearch: function() {
@@ -57,23 +62,28 @@
 
                     if (!cy) return; // cy가 아직 초기화되지 않았을 경우 방어
 
-                    this.searchResults = cy.nodes().filter(function(node) {
+                    var results = cy.nodes().filter(function(node) {
                         var label = (node.data('label') || '').toLowerCase();
                         var id = node.id().toLowerCase();
                         return label.includes(query) || id.includes(query);
                     }).map(function(node) {
                         return {
                             id: node.id(),
-                            label: node.data('label') || node.id(),
-                            cyNode: node
+                            label: node.data('label') || node.id()
                         };
                     });
+                    
+                    // Alpine.js Proxy 객체 이슈 방지를 위해 일반 배열로 변환하여 할당
+                    this.searchResults = Array.from(results).slice(0, 20); // 최대 20개까지만 표시
                 },
 
                 selectSearchResult: function(nodeData) {
                     this.searchQuery = '';
                     this.searchResults = [];
                     
+                    var cyNode = cy.getElementById(nodeData.id);
+                    if (!cyNode || cyNode.length === 0) return;
+
                     cy.batch(function() {
                         setResetFocus(cy);
                         setStyle(cy, {
@@ -82,11 +92,11 @@
                             'target-arrow-color': dimColor,
                             'color': dimColor
                         });
-                        setFocus(nodeData.cyNode, successorColor, predecessorsColor, edgeActiveWidth, arrowActiveScale);
+                        setFocus(cyNode, successorColor, predecessorsColor, edgeActiveWidth, arrowActiveScale);
                     });
                     
                     cy.animate({
-                        center: { eles: nodeData.cyNode }
+                        center: { eles: cyNode }
                     }, { duration: 500 });
                 },
 

@@ -17,7 +17,6 @@
         }
 
         #add-node-panel {
-            display: none;
             position: absolute;
             top: 20px;
             right: 20px;
@@ -189,7 +188,6 @@
         }
 
         #add-node-panel {
-            display: none;
             position: absolute;
             top: 20px;
             right: 20px;
