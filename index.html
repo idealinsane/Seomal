@@ -20,55 +20,79 @@
     <script src="./cytoscape.3.13.0.min.js"></script>
     <script src="./cytoscape-cose-bilkent.4.0.0.js"></script>
     <script src="lib/TinyColor-1.0.0/tinycolor.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script
             src="https://code.jquery.com/jquery-2.2.4.min.js"
             integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
             crossorigin="anonymous"></script>
 </head>
-<body>
+<body x-data="appState()">
 <!--<textarea id="msg" style="width:100%; height:200px;"></textarea>-->
 <div id="mode-toggle-container">
     <label class="switch">
-        <input type="checkbox" id="mode-toggle">
+        <input type="checkbox" x-model="isEditMode" @change="toggleEditMode()">
         <span class="slider round"></span>
     </label>
-    <span id="mode-label">뷰어 모드</span>
+    <span id="mode-label" x-text="isEditMode ? '수정 모드' : '뷰어 모드'"></span>
 </div>
-<div id="search-container">
-    <input type="text" id="node-search" placeholder="노드 검색 (이름 또는 ID)..." autocomplete="off">
-    <div id="search-results"></div>
+<div id="search-container" @click.outside="searchResults = []">
+    <input type="text" id="node-search" placeholder="노드 검색 (이름 또는 ID)..." autocomplete="off" 
+           x-model="searchQuery" @input.debounce.150ms="handleSearch()">
+    <div id="search-results" x-show="searchResults.length > 0">
+        <template x-for="node in searchResults" :key="node.id">
+            <div class="search-item" @click="selectSearchResult(node)">
+                <span x-text="node.label + ' (' + node.id + ')'"></span>
+            </div>
+        </template>
+    </div>
 </div>
-<div id="add-node-panel">
+<div id="add-node-panel" x-show="isEditMode" style="display: none;">
     <h3>새 노드 추가</h3>
     <div class="click-mode-selector">
         <strong>그래프에서 클릭하여 선택:</strong>
-        <div class="segment-control" id="click-mode-group">
-            <button type="button" class="segment-btn active" data-value="none">일반</button>
-            <button type="button" class="segment-btn target-btn" data-value="target">선행(파랑)</button>
-            <button type="button" class="segment-btn source-btn" data-value="source">후행(빨강)</button>
+        <div class="segment-control">
+            <button type="button" class="segment-btn" :class="{'active': clickMode === 'none'}" @click="clickMode = 'none'">일반</button>
+            <button type="button" class="segment-btn target-btn" :class="{'active': clickMode === 'target'}" @click="clickMode = 'target'">선행(파랑)</button>
+            <button type="button" class="segment-btn source-btn" :class="{'active': clickMode === 'source'}" @click="clickMode = 'source'">후행(빨강)</button>
         </div>
     </div>
     <div class="input-group">
         <label for="node-id">ID (필수)</label>
-        <input type="text" id="node-id" placeholder="예: NEW_NODE" required>
+        <input type="text" id="node-id" placeholder="예: NEW_NODE" x-model="newNode.id" required>
     </div>
     <div class="input-group">
         <label for="node-label">이름 (Label)</label>
-        <input type="text" id="node-label" placeholder="예: 새로운 과목">
+        <input type="text" id="node-label" placeholder="예: 새로운 과목" x-model="newNode.label">
     </div>
     <div class="input-group">
         <label for="node-url">URL (선택)</label>
-        <input type="text" id="node-url" placeholder="https://...">
+        <input type="text" id="node-url" placeholder="https://..." x-model="newNode.url">
     </div>
     <div class="input-group">
         <label>선행 노드 (이 노드를 위해 먼저 배워야 할 것)</label>
-        <div id="selected-targets" class="selected-nodes-container">선택된 노드가 없습니다.</div>
+        <div class="selected-nodes-container">
+            <template x-for="node in selectedTargets" :key="node.id">
+                <div class="node-badge target-badge">
+                    <span x-text="node.label"></span>
+                    <span @click="removeTarget(node.id)">×</span>
+                </div>
+            </template>
+            <div x-show="selectedTargets.length === 0">선택된 노드가 없습니다.</div>
+        </div>
     </div>
     <div class="input-group">
         <label>후행 노드 (이 노드를 배운 후 배울 수 있는 것)</label>
-        <div id="selected-sources" class="selected-nodes-container">선택된 노드가 없습니다.</div>
+        <div class="selected-nodes-container">
+            <template x-for="node in selectedSources" :key="node.id">
+                <div class="node-badge source-badge">
+                    <span x-text="node.label"></span>
+                    <span @click="removeSource(node.id)">×</span>
+                </div>
+            </template>
+            <div x-show="selectedSources.length === 0">선택된 노드가 없습니다.</div>
+        </div>
     </div>
-    <button id="add-node-btn">노드 추가하기</button>
+    <button id="add-node-btn" @click="addNode()">노드 추가하기</button>
 </div>
 <div id="cy"></div>
 <script src="js/main.js"></script>

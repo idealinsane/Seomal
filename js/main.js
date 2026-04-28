@@ -12,80 +12,314 @@
         return 'data/' + (getParameterByName('src') ? getParameterByName('src') + '.json' : 'data.json');
     }
 
+    // Alpine.js State Store
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('appState', () => ({
+            isEditMode: false,
+            clickMode: 'none',
+            searchQuery: '',
+            searchResults: [],
+            newNode: {
+                id: '',
+                label: '',
+                url: ''
+            },
+            selectedTargets: [], // Array of {id, label}
+            selectedSources: [], // Array of {id, label}
+
+            toggleEditMode() {
+                if (this.isEditMode) {
+                    setResetFocus(cy);
+                    cy.autoungrabify(true);
+                    cy.boxSelectionEnabled(false);
+                    this.updateGraphSelectionStyles();
+                } else {
+                    this.selectedTargets = [];
+                    this.selectedSources = [];
+                    this.updateGraphSelectionStyles();
+                    cy.autoungrabify(false);
+                    cy.boxSelectionEnabled(true);
+                }
+            },
+
+            handleSearch() {
+                const query = this.searchQuery.trim().toLowerCase();
+                if (!query) {
+                    this.searchResults = [];
+                    return;
+                }
+
+                this.searchResults = cy.nodes().filter(function(node) {
+                    var label = (node.data('label') || '').toLowerCase();
+                    var id = node.id().toLowerCase();
+                    return label.includes(query) || id.includes(query);
+                }).map(node => ({
+                    id: node.id(),
+                    label: node.data('label') || node.id(),
+                    cyNode: node
+                }));
+            },
+
+            selectSearchResult(nodeData) {
+                this.searchQuery = '';
+                this.searchResults = [];
+                
+                cy.batch(function() {
+                    setResetFocus(cy);
+                    setStyle(cy, {
+                        'background-color': dimColor,
+                        'line-color': dimColor,
+                        'target-arrow-color': dimColor,
+                        'color': dimColor
+                    });
+                    setFocus(nodeData.cyNode, successorColor, predecessorsColor, edgeActiveWidth, arrowActiveScale);
+                });
+                
+                cy.animate({
+                    center: { eles: nodeData.cyNode }
+                }, { duration: 500 });
+            },
+
+            handleNodeClick(node) {
+                if (!this.isEditMode) {
+                    var url = node.data('url');
+                    gtag('event', 'Click', {
+                        'event_category': 'node',
+                        'event_label': node.id(),
+                        'value': 1
+                    });
+                    if(url && url !== '') window.open(url);
+                    return;
+                }
+
+                const nodeId = node.id();
+                const nodeLabel = node.data('label') || nodeId;
+
+                if (this.clickMode === 'target') {
+                    const exists = this.selectedTargets.find(t => t.id === nodeId);
+                    if (exists) this.selectedTargets = this.selectedTargets.filter(t => t.id !== nodeId);
+                    else this.selectedTargets.push({ id: nodeId, label: nodeLabel });
+                } else if (this.clickMode === 'source') {
+                    const exists = this.selectedSources.find(s => s.id === nodeId);
+                    if (exists) this.selectedSources = this.selectedSources.filter(s => s.id !== nodeId);
+                    else this.selectedSources.push({ id: nodeId, label: nodeLabel });
+                }
+                this.updateGraphSelectionStyles();
+            },
+
+            removeTarget(id) {
+                this.selectedTargets = this.selectedTargets.filter(t => t.id !== id);
+                this.updateGraphSelectionStyles();
+            },
+
+            removeSource(id) {
+                this.selectedSources = this.selectedSources.filter(s => s.id !== id);
+                this.updateGraphSelectionStyles();
+            },
+
+            updateGraphSelectionStyles() {
+                cy.nodes().removeClass('selected-target selected-source');
+                this.selectedTargets.forEach(t => cy.getElementById(t.id).addClass('selected-target'));
+                this.selectedSources.forEach(s => cy.getElementById(s.id).addClass('selected-source'));
+            },
+
+            addNode() {
+                var idInput = this.newNode.id.trim();
+                var labelInput = this.newNode.label.trim();
+                var urlInput = this.newNode.url.trim();
+
+                if (!idInput) {
+                    alert('노드 ID를 입력해주세요.');
+                    return;
+                }
+
+                if (cy.getElementById(idInput).length > 0) {
+                    alert('이미 존재하는 ID입니다. 다른 ID를 사용해주세요.');
+                    return;
+                }
+
+                var elementsToAdd = [];
+                elementsToAdd.push({
+                    group: 'nodes',
+                    data: {
+                        id: idInput,
+                        label: labelInput || idInput,
+                        url: urlInput
+                    }
+                });
+
+                this.selectedTargets.forEach(t => {
+                    elementsToAdd.push({
+                        group: 'edges',
+                        data: { id: t.id + '-' + idInput, source: t.id, target: idInput }
+                    });
+                });
+
+                this.selectedSources.forEach(s => {
+                    elementsToAdd.push({
+                        group: 'edges',
+                        data: { id: idInput + '-' + s.id, source: idInput, target: s.id }
+                    });
+                });
+
+                var srcParam = getParameterByName('src');
+                var payload = { src: srcParam || 'data', elements: elementsToAdd };
+
+                fetch('/api/add-elements', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Server response:', data);
+                    cy.add(elementsToAdd);
+                    pageRank = cy.elements().pageRank();
+                    setResetFocus(cy);
+                    cy.layout({
+                        name: 'cose-bilkent', animate: true, animationDuration: 500,
+                        gravityRangeCompound: 1.5, fit: true, tile: true
+                    }).run();
+
+                    this.newNode = { id: '', label: '', url: '' };
+                    this.selectedTargets = [];
+                    this.selectedSources = [];
+                    this.updateGraphSelectionStyles();
+                    
+                    alert('노드가 성공적으로 추가되고 파일에 저장되었습니다!');
+                })
+                .catch(error => {
+                    console.error('Error saving elements:', error);
+                    alert('서버 저장 중 오류가 발생했습니다. 개발자 도구 콘솔을 확인해주세요.');
+                });
+            }
+        }));
+    });
+
+    // Global variables for Cytoscape styling
+    var dimColor = '#f4f4f8';
+    var textOutlineColor = 'white';
+    var fontColor = 'black';
+    var nodeBGColor = '#4f5b66';
+    var edgeBGColor = '#c0c5ce';
+    var edgeWidth = '0.3px';
+    var arrowScale = 0.2;
+    var arrowActiveScale = 0.5;
+    var successorColor = 'rgb(246, 176, 172)';
+    var successorWeakColor = '#ff8b94';
+    var predecessorsColor = 'rgb(140, 232, 250)';
+    var predecessorsWeakColor = '#4a91f2';
+    var nodeActiveBGColor = '#fed766';
+    var nodeActiveSize = 23;
+    var nodeActiveFontSize = 7;
+    var edgeActiveWidth = '1px';
+    var pageRank;
+    var nodeMaxSize = 80;
+    var nodeMinSize = 4;
+    var fontMaxSize = 7;
+    var fontMinSize = 4;
+    var cy;
+
+    function setOpacityElement(target_element, degree){
+        target_element.style('opacity', degree);
+    }
+
+    function setStyle(target_cy, style){
+        target_cy.batch(function() {
+            target_cy.nodes().forEach(function(target){
+                target.style(style);
+            });
+            target_cy.edges().forEach(function(target){
+                target.style(style);
+            });
+        });
+    }
+
+    function setResetFocus(target_cy){
+        target_cy.batch(function() {
+            target_cy.nodes().forEach(function(target){
+                target.style('background-color', nodeBGColor);
+                var rank = 0;
+                try {
+                    var rankObj = pageRank.rank('#' + target.id());
+                    if (rankObj !== undefined && rankObj !== null) {
+                        rank = typeof rankObj === 'number' ? rankObj : (rankObj[0] || 0);
+                    }
+                } catch(e) {}
+                target.style('width', nodeMaxSize*rank+nodeMinSize);
+                target.style('height', nodeMaxSize*rank+nodeMinSize);
+                target.style('font-size', fontMaxSize*rank+fontMinSize);
+                target.style('color', fontColor);
+            });
+            target_cy.edges().forEach(function(target){
+                target.style('line-color', edgeBGColor);
+                target.style('target-arrow-color', edgeBGColor);
+                target.style('width', edgeWidth);
+                target.style('arrow-scale', arrowScale);
+            });
+        });
+    }
+
+    function setFocus(target_element, successorsColor, predecessorsColor, edgeWidth, arrowScale){
+        cy.batch(function() {
+            target_element.style('background-color', nodeActiveBGColor);
+            target_element.style('color', fontColor);
+            target_element.successors().each(
+                function(e){
+                    if(e.isEdge()){
+                        e.style('width', edgeWidth);
+                        e.style('arrow-scale', arrowScale);
+                    }
+                    e.style('color',fontColor);
+                    e.style('background-color',successorColor);
+                    e.style('line-color', successorColor);
+                    e.style('target-arrow-color', successorColor);
+                    e.style('z-index', getMaxZIndex());
+                    setOpacityElement(e, 1);
+                }
+            );
+            target_element.predecessors().each(function(e){
+                if(e.isEdge()){
+                    e.style('width', edgeWidth);
+                    e.style('arrow-scale', arrowScale);
+                }
+                e.style('color',fontColor);
+                e.style('background-color',predecessorsColor);
+                e.style('line-color', predecessorsColor);
+                e.style('target-arrow-color', predecessorsColor);
+                e.style('z-index', getMaxZIndex());
+                setOpacityElement(e, 1);
+            });
+            target_element.neighborhood().each(
+                function(e){
+                    var empDegree = 30;
+                    e.style('background-color',tinycolor(e.style('background-color')).darken(empDegree).toString());
+                    e.style('line-color', tinycolor(e.style('line-color')).darken(empDegree).toString());
+                    e.style('target-arrow-color', tinycolor(e.style('target-arrow-color')).darken(empDegree).toString());
+                }
+            );
+            target_element.style('z-index', getMaxZIndex());
+            target_element.style('width', Math.max(parseFloat(target_element.style('width')), nodeActiveSize));
+            target_element.style('height', Math.max(parseFloat(target_element.style('height')), nodeActiveSize));
+            target_element.style('font-size', Math.max(parseFloat(target_element.style('font-size')), nodeActiveFontSize));
+        });
+    }
+
+    function getMaxZIndex(){
+        if(!window.zindex){
+            window.zindex = 1;
+        }
+        return ++window.zindex;
+    }
+
     fetch(getFetchURL())
         .then(function (res) {
             return res.json();
         })
         .then(function (data) {
-
-            function setFocus(target_element, successorsColor, predecessorsColor, edgeWidth, arrowScale){
-                cy.batch(function() {
-                    target_element.style('background-color', nodeActiveBGColor);
-                    target_element.style('color', fontColor);
-                    target_element.successors().each(
-                        function(e){
-                            if(e.isEdge()){
-                                e.style('width', edgeWidth);
-                                e.style('arrow-scale', arrowScale);
-                            }
-                            e.style('color',fontColor);
-                            e.style('background-color',successorColor);
-                            e.style('line-color', successorColor);
-                            e.style('target-arrow-color', successorColor);
-                            e.style('z-index', getMaxZIndex());
-                            setOpacityElement(e, 1);
-                        }
-                    );
-                    target_element.predecessors().each(function(e){
-                        if(e.isEdge()){
-                            e.style('width', edgeWidth);
-                            e.style('arrow-scale', arrowScale);
-                        }
-                        e.style('color',fontColor);
-                        e.style('background-color',predecessorsColor);
-                        e.style('line-color', predecessorsColor);
-                        e.style('target-arrow-color', predecessorsColor);
-                        e.style('z-index', getMaxZIndex());
-                        setOpacityElement(e, 1);
-                    });
-                    target_element.neighborhood().each(
-                        function(e){
-                            var empDegree = 30;
-                            e.style('background-color',tinycolor(e.style('background-color')).darken(empDegree).toString());
-                            e.style('line-color', tinycolor(e.style('line-color')).darken(empDegree).toString());
-                            e.style('target-arrow-color', tinycolor(e.style('target-arrow-color')).darken(empDegree).toString());
-                        }
-                    );
-                    target_element.style('z-index', getMaxZIndex());
-                    target_element.style('width', Math.max(parseFloat(target_element.style('width')), nodeActiveSize));
-                    target_element.style('height', Math.max(parseFloat(target_element.style('height')), nodeActiveSize));
-                    target_element.style('font-size', Math.max(parseFloat(target_element.style('font-size')), nodeActiveFontSize));
-                });
-            }
-
-            var pageRank; // 계산은 cy 초기화 이후에 진행
-            var nodeMaxSize = 80;
-            var nodeMinSize = 4;
-            var fontMaxSize = 7;
-            var fontMinSize = 4;
-
-            var dimColor = '#f4f4f8';
-            var textOutlineColor = 'white';
-            var fontColor = 'black';
-            var nodeBGColor = '#4f5b66';
-            var edgeBGColor = '#c0c5ce';
-            var edgeWidth = '0.3px';
-            var arrowScale = 0.2
-            var arrowActiveScale = 0.5
-            var successorColor = 'rgb(246, 176, 172)';
-            var successorWeakColor = '#ff8b94';
-            var predecessorsColor = 'rgb(140, 232, 250)';
-            var predecessorsWeakColor = '#4a91f2';
-
-            var nodeActiveBGColor = '#fed766';
-            var nodeActiveSize = 23;
-            var nodeActiveFontSize = 7;
-            var edgeActiveWidth = '1px';
 
             var layout = {
                 name: 'cose-bilkent',
@@ -95,23 +329,14 @@
                 tile: true
             };
 
-
-            // var layout = {
-            //     name: 'euler',
-            //     randomize: true,
-            //     animate: false,
-            //     fit:true
-            // }
-
-
             cy = cytoscape({
-                container: document.getElementById('cy'), // container to render in
+                container: document.getElementById('cy'),
                 elements: data,
                 minZoom:0.2,
                 wheelSensitivity:0.1,
-                autounselectify: true, // 기본 선택(파란색 오버레이) 비활성화
-                boxSelectionEnabled: false, // 박스 선택 비활성화
-                style: [ // the stylesheet for the graph
+                autounselectify: true,
+                boxSelectionEnabled: false,
+                style: [
                     {
                         selector: 'node',
                         style: {
@@ -186,193 +411,45 @@
                         }
                     }
                 ],
-
                 layout: layout
             });
 
-            // 초기 PageRank 계산
             pageRank = cy.elements().pageRank();
-
-            function getMaxZIndex(){
-                if(!window.zindex){
-                    window.zindex = 1;
-                }
-                return ++window.zindex;
-            }
-
-
-
-
-
-            function setOpacityElement(target_element, degree){
-                target_element.style('opacity', degree);
-            }
-
-            function setOpacity(target_cy, degree){
-                target_cy.batch(function() {
-                    target_cy.nodes().forEach(function(target){
-                        setOpacityElement(target, degree);
-                    });
-                    target_cy.edges().forEach(function(target){
-                        setOpacityElement(target, degree);
-                    });
-                });
-            }
-
-            function setStyle(target_cy, style){
-                target_cy.batch(function() {
-                    target_cy.nodes().forEach(function(target){
-                        target.style(style);
-                    });
-                    target_cy.edges().forEach(function(target){
-                        target.style(style);
-                    });
-                });
-            }
-
-            function setResetFocus(target_cy){
-                target_cy.batch(function() {
-                    target_cy.nodes().forEach(function(target){
-                        target.style('background-color', nodeBGColor);
-                        var rank = 0;
-                        try {
-                            var rankObj = pageRank.rank('#' + target.id());
-                            // rankObj가 객체이고 값이 있을 경우, 혹은 숫자일 경우 처리
-                            if (rankObj !== undefined && rankObj !== null) {
-                                rank = typeof rankObj === 'number' ? rankObj : (rankObj[0] || 0);
-                            }
-                        } catch(e) {
-                            // 새로 추가된 노드 등에서 에러 발생 시 기본값 0 유지
-                        }
-                        target.style('width', nodeMaxSize*rank+nodeMinSize);
-                        target.style('height', nodeMaxSize*rank+nodeMinSize);
-                        target.style('font-size', fontMaxSize*rank+fontMinSize);
-                        target.style('color', fontColor);
-                    });
-                    target_cy.edges().forEach(function(target){
-                        target.style('line-color', edgeBGColor);
-                        target.style('target-arrow-color', edgeBGColor);
-                        target.style('width', edgeWidth);
-                        target.style('arrow-scale', arrowScale);
-                    });
-                });
-            }
 
             var home = getParameterByName('i');
             if(home){
                 var _home = cy.$('#'+home);
                 setResetFocus(cy);
                 setFocus(_home, successorColor, predecessorsColor, edgeActiveWidth, arrowActiveScale);
-                // cy.animate({
-                //     center:{eles:_home}
-                // }, {duration:1500})
             } else {
                 setResetFocus(cy);
             }
 
-            var isEditMode = true;
-            var currentClickMode = 'target';
-
-            // 모드 선택 버튼 로직
-            document.querySelectorAll('.segment-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.segment-btn').forEach(function(b) { b.classList.remove('active'); });
-                    this.classList.add('active');
-                    currentClickMode = this.getAttribute('data-value');
-                });
-            });
-
-            // 초기 상태 설정
-            document.getElementById('add-node-panel').style.display = 'block';
-            document.getElementById('mode-label').innerText = '수정 모드';
-            document.getElementById('mode-toggle').checked = true;
-
-            var selectedTargets = new Set();
-            var selectedSources = new Set();
-            
-            // 수정 모드 진입 시 드래그 및 호버 효과 제어
-            document.getElementById('mode-toggle').addEventListener('change', function(e) {
-                isEditMode = e.target.checked;
-                var panel = document.getElementById('add-node-panel');
-                var label = document.getElementById('mode-label');
-                
-                if (isEditMode) {
-                    panel.style.display = 'block';
-                    label.innerText = '수정 모드';
-                    setResetFocus(cy); // 수정 모드 진입 시 기존 호버 상태 초기화
-                    
-                    // 수정 모드: 드래그 방지, 박스 선택 방지
-                    cy.autoungrabify(true); 
-                    cy.boxSelectionEnabled(false);
-                    
-                    updateGraphSelectionStyles(); 
-                } else {
-                    panel.style.display = 'none';
-                    label.innerText = '뷰어 모드';
-                    
-                    // 뷰어 모드로 전환 시 선택 초기화
-                    selectedTargets.clear();
-                    selectedSources.clear();
-                    renderSelectedNodes();
-                    updateGraphSelectionStyles();
-                    
-                    // 뷰어 모드: 드래그 허용
-                    cy.autoungrabify(false); 
-                    cy.boxSelectionEnabled(true);
-                }
-            });
-
-            function updateGraphSelectionStyles() {
-                cy.nodes().removeClass('selected-target selected-source');
-                
-                // 선택된 노드가 있으면 강조 스타일을 덮어씌우지 않도록 주의
-                selectedTargets.forEach(function(id) { cy.getElementById(id).addClass('selected-target'); });
-                selectedSources.forEach(function(id) { cy.getElementById(id).addClass('selected-source'); });
-            }
-
+            // Bind Cytoscape events to Alpine state
             cy.on('tap', 'node', function (e) {
-                if (isEditMode) {
-                    var nodeId = e.target.id();
-                    if (currentClickMode === 'target') {
-                        if (selectedTargets.has(nodeId)) selectedTargets.delete(nodeId);
-                        else selectedTargets.add(nodeId);
-                        renderSelectedNodes();
-                        updateGraphSelectionStyles();
-                    } else if (currentClickMode === 'source') {
-                        if (selectedSources.has(nodeId)) selectedSources.delete(nodeId);
-                        else selectedSources.add(nodeId);
-                        renderSelectedNodes();
-                        updateGraphSelectionStyles();
-                    }
-                } else {
-                    var url = e.target.data('url');
-                    gtag('event', 'Click', {
-                        'event_category': 'node',
-                        'event_label': e.target.id(),
-                        'value': 1
-                    });
-                    if(url && url !== '')
-                        window.open(url);
-                }
+                // Access Alpine state from the body element
+                var appState = Alpine.$data(document.body);
+                appState.handleNodeClick(e.target);
             });
 
             cy.on('tap', function (e) {
-                // 바탕화면을 탭했을 때 하이라이트를 제거
                 if(e.cy === e.target){
-                    if (!isEditMode) {
+                    var appState = Alpine.$data(document.body);
+                    if (!appState.isEditMode) {
                         setResetFocus(e.cy);
                     }
                 }
             });
 
             cy.on('tapend mouseout', 'node', function(e){
-                if (isEditMode) return; // 수정 모드에서는 호버 애니메이션 무시
-                // document.querySelector('#msg').value += (e.type)+"\n";
+                var appState = Alpine.$data(document.body);
+                if (appState.isEditMode) return;
                 setResetFocus(e.cy);
             });
 
             cy.on('tapstart mouseover', 'node', function(e){
-                if (isEditMode) return; // 수정 모드에서는 호버 애니메이션 무시
+                var appState = Alpine.$data(document.body);
+                if (appState.isEditMode) return;
                 setResetFocus(e.cy);
                 setStyle(cy, {
                     'background-color':dimColor,
@@ -383,244 +460,8 @@
                 setFocus(e.target, successorColor, predecessorsColor, edgeActiveWidth, arrowActiveScale);
             });
 
-            // web font가 로딩이 끝나면 강제로 redraw 합니다.
             waitForWebfonts(['Open Sans Condensed'], function(){
                 cy.forceRender();
-                renderSelectedNodes();
-            })
-
-            function renderSelectedNodes() {
-                var targetContainer = document.getElementById('selected-targets');
-                var sourceContainer = document.getElementById('selected-sources');
-                
-                targetContainer.innerHTML = '';
-                sourceContainer.innerHTML = '';
-
-                if (selectedTargets.size === 0) {
-                    targetContainer.innerText = '선택된 노드가 없습니다.';
-                } else {
-                    selectedTargets.forEach(function(id) {
-                        var node = cy.getElementById(id);
-                        var label = node.length > 0 ? (node.data('label') || id) : id;
-                        var badge = document.createElement('div');
-                        badge.className = 'node-badge target-badge';
-                        badge.innerText = label;
-                        var removeBtn = document.createElement('span');
-                        removeBtn.innerText = '×';
-                        removeBtn.onclick = function() {
-                            selectedTargets.delete(id);
-                            renderSelectedNodes();
-                            updateGraphSelectionStyles();
-                        };
-                        badge.appendChild(removeBtn);
-                        targetContainer.appendChild(badge);
-                    });
-                }
-
-                if (selectedSources.size === 0) {
-                    sourceContainer.innerText = '선택된 노드가 없습니다.';
-                } else {
-                    selectedSources.forEach(function(id) {
-                        var node = cy.getElementById(id);
-                        var label = node.length > 0 ? (node.data('label') || id) : id;
-                        var badge = document.createElement('div');
-                        badge.className = 'node-badge source-badge';
-                        badge.innerText = label;
-                        var removeBtn = document.createElement('span');
-                        removeBtn.innerText = '×';
-                        removeBtn.onclick = function() {
-                            selectedSources.delete(id);
-                            renderSelectedNodes();
-                            updateGraphSelectionStyles();
-                        };
-                        badge.appendChild(removeBtn);
-                        sourceContainer.appendChild(badge);
-                    });
-                }
-            }
-
-            // 새 노드 추가 로직
-            document.getElementById('add-node-btn').addEventListener('click', function() {
-                var idInput = document.getElementById('node-id').value.trim();
-                var labelInput = document.getElementById('node-label').value.trim();
-                var urlInput = document.getElementById('node-url').value.trim();
-                
-                var targets = Array.from(selectedTargets);
-                var sources = Array.from(selectedSources);
-
-                if (!idInput) {
-                    alert('노드 ID를 입력해주세요.');
-                    return;
-                }
-
-                // 중복 ID 확인
-                if (cy.getElementById(idInput).length > 0) {
-                    alert('이미 존재하는 ID입니다. 다른 ID를 사용해주세요.');
-                    return;
-                }
-
-                var elementsToAdd = [];
-
-                var newNode = {
-                    group: 'nodes',
-                    data: {
-                        id: idInput,
-                        label: labelInput || idInput, // 라벨이 없으면 ID를 라벨로 사용
-                        url: urlInput
-                    }
-                };
-                elementsToAdd.push(newNode);
-
-                // 선행 노드 연결 (target)
-                // 이 노드를 배우려면 target을 먼저 배워야 함 (이 노드가 source가 됨)
-                targets.forEach(function(targetId) {
-                    elementsToAdd.push({
-                        group: 'edges',
-                        data: {
-                            id: targetId + '-' + idInput, // ID 규칙: source-target
-                            source: targetId,
-                            target: idInput
-                        }
-                    });
-                });
-
-                // 후행 노드 연결 (source)
-                // 이 노드를 배운 후 source를 배울 수 있음 (이 노드가 target이 됨)
-                sources.forEach(function(sourceId) {
-                    elementsToAdd.push({
-                        group: 'edges',
-                        data: {
-                            id: idInput + '-' + sourceId, // ID 규칙: source-target
-                            source: idInput,
-                            target: sourceId
-                        }
-                    });
-                });
-
-                // 서버로 데이터 전송 및 저장
-                var srcParam = getParameterByName('src');
-                var payload = {
-                    src: srcParam || 'data',
-                    elements: elementsToAdd
-                };
-
-                fetch('/api/add-elements', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                })
-                .then(function(response) {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(function(data) {
-                    console.log('Server response:', data);
-                    
-                    // 그래프에 노드와 엣지 추가 (서버 저장 성공 시에만 화면에 반영)
-                    cy.add(elementsToAdd);
-                    
-                    // PageRank 다시 계산
-                    pageRank = cy.elements().pageRank();
-
-                    // 새로 추가된 요소들에 기본 스타일 적용을 위해 리셋 포커스 호출
-                    setResetFocus(cy);
-
-                    // 레이아웃 다시 실행하여 노드 배치
-                    var layout = cy.layout({
-                        name: 'cose-bilkent',
-                        animate: true,
-                        animationDuration: 500,
-                        gravityRangeCompound: 1.5,
-                        fit: true,
-                        tile: true
-                    });
-                    layout.run();
-
-                    // 입력 폼 초기화
-                    document.getElementById('node-id').value = '';
-                    document.getElementById('node-label').value = '';
-                    document.getElementById('node-url').value = '';
-                    
-                    // 선택 초기화
-                    selectedTargets.clear();
-                    selectedSources.clear();
-                    renderSelectedNodes();
-                    updateGraphSelectionStyles();
-                    
-                    alert('노드가 성공적으로 추가되고 파일에 저장되었습니다!');
-                })
-                .catch(function(error) {
-                    console.error('Error saving elements:', error);
-                    alert('서버 저장 중 오류가 발생했습니다. 개발자 도구 콘솔을 확인해주세요.');
-                });
-            });
-
-            // 노드 검색 기능 로직
-            var searchInput = document.getElementById('node-search');
-            var searchResults = document.getElementById('search-results');
-
-            var handleSearch = debouncer(function() {
-                var query = searchInput.value.trim().toLowerCase();
-                searchResults.innerHTML = '';
-                
-                if (!query) {
-                    searchResults.style.display = 'none';
-                    return;
-                }
-
-                // 이름(label) 또는 ID에 검색어가 포함된 노드 필터링
-                var matchedNodes = cy.nodes().filter(function(node) {
-                    var label = (node.data('label') || '').toLowerCase();
-                    var id = node.id().toLowerCase();
-                    return label.includes(query) || id.includes(query);
-                });
-
-                if (matchedNodes.length > 0) {
-                    searchResults.style.display = 'block';
-                    matchedNodes.forEach(function(node) {
-                        var div = document.createElement('div');
-                        div.className = 'search-item';
-                        div.innerText = (node.data('label') || node.id()) + ' (' + node.id() + ')';
-                        
-                        div.addEventListener('click', function() {
-                            // 검색창 초기화 및 결과 숨김
-                            searchInput.value = '';
-                            searchResults.style.display = 'none';
-                            
-                            // 기존 포커스 초기화 후 선택한 노드 포커스
-                            cy.batch(function() {
-                                setResetFocus(cy);
-                                setStyle(cy, {
-                                    'background-color': dimColor,
-                                    'line-color': dimColor,
-                                    'target-arrow-color': dimColor,
-                                    'color': dimColor
-                                });
-                                setFocus(node, successorColor, predecessorsColor, edgeActiveWidth, arrowActiveScale);
-                            });
-                            
-                            // 선택한 노드로 뷰 이동 (애니메이션)
-                            cy.animate({
-                                center: { eles: node }
-                            }, { duration: 500 });
-                        });
-                        
-                        searchResults.appendChild(div);
-                    });
-                } else {
-                    searchResults.style.display = 'none';
-                }
-            }, 150);
-
-            searchInput.addEventListener('input', handleSearch);
-
-            // 검색창 외부 클릭 시 결과 창 숨기기
-            document.addEventListener('click', function(e) {
-                if (!document.getElementById('search-container').contains(e.target)) {
-                    searchResults.style.display = 'none';
-                }
             });
 
         });
