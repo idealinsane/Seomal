@@ -78,6 +78,7 @@
                         });
                     }
                     
+                    // Alpine.js가 배열의 변화를 감지할 수 있도록 배열 자체를 교체
                     this.searchResults = newResults;
                 },
 

@@ -41,7 +41,7 @@
 </div>
 <div id="search-container" @click.outside="searchResults = []">
     <input type="text" id="node-search" placeholder="노드 검색 (이름 또는 ID)..." autocomplete="off" 
-           x-model="searchQuery" @input.debounce.150ms="handleSearch()">
+           x-model="searchQuery" @keyup="handleSearch()">
     <div id="search-results" x-show="searchResults.length > 0">
         <template x-for="node in searchResults" :key="node.id">
             <div class="search-item" @click="selectSearchResult(node)">
